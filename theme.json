@@ -1,0 +1,92 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/theme.json",
+  "version": 3,
+  "settings": {
+    "appearanceTools": true,
+    "color": {
+      "custom": true,
+      "customGradient": true,
+      "defaultDuotone": false,
+      "defaultGradients": false,
+      "defaultPalette": false,
+      "palette": [
+        { "color": "#E8435A", "name": "Ana Renk (Kırmızı)",    "slug": "primary" },
+        { "color": "#2D3561", "name": "İkincil Renk (Lacivert)", "slug": "secondary" },
+        { "color": "#FFD93D", "name": "Vurgu Rengi (Sarı)",       "slug": "accent" },
+        { "color": "#6BCB77", "name": "Yeşil",                    "slug": "green" },
+        { "color": "#1A1A2E", "name": "Koyu",                      "slug": "dark" },
+        { "color": "#F8F9FF", "name": "Açık Arka Plan",           "slug": "light" },
+        { "color": "#FFFFFF", "name": "Beyaz",                     "slug": "white" },
+        { "color": "#2d3748", "name": "Metin",                     "slug": "text" }
+      ],
+      "gradients": [
+        { "gradient": "linear-gradient(135deg, #E8435A 0%, #2D3561 100%)", "name": "Ana Degrade", "slug": "primary-gradient" },
+        { "gradient": "linear-gradient(135deg, #1A1A2E 0%, #2D3561 50%, #3d1a78 100%)", "name": "Hero Degrade", "slug": "hero-gradient" }
+      ]
+    },
+    "typography": {
+      "customFontSize": true,
+      "fontSizes": [
+        { "size": "0.85rem",  "name": "Küçük",   "slug": "small" },
+        { "size": "1rem",     "name": "Normal",   "slug": "normal" },
+        { "size": "1.2rem",   "name": "Büyük",    "slug": "large" },
+        { "size": "1.5rem",   "name": "X-Büyük",  "slug": "x-large" },
+        { "size": "2rem",     "name": "2X-Büyük", "slug": "xx-large" },
+        { "size": "2.8rem",   "name": "Dev",       "slug": "huge" }
+      ],
+      "fontFamilies": [
+        { "fontFamily": "'Nunito', sans-serif", "name": "Nunito (Başlıklar)", "slug": "heading" },
+        { "fontFamily": "'Inter', sans-serif",  "name": "Inter (Metin)",     "slug": "body" }
+      ]
+    },
+    "spacing": {
+      "units": [ "px", "%", "em", "rem", "vw", "vh" ],
+      "customSpacingSize": true
+    },
+    "border": {
+      "color": true,
+      "radius": true,
+      "style": true,
+      "width": true
+    },
+    "layout": {
+      "contentSize": "1200px",
+      "wideSize": "1440px"
+    }
+  },
+  "styles": {
+    "color": {
+      "background": "#FFFFFF",
+      "text": "#2d3748"
+    },
+    "typography": {
+      "fontFamily": "'Inter', sans-serif",
+      "fontSize": "1rem",
+      "lineHeight": "1.7"
+    },
+    "elements": {
+      "link": {
+        "color": { "text": "#E8435A" },
+        ":hover": { "color": { "text": "#c73249" } }
+      },
+      "h1": { "typography": { "fontFamily": "'Nunito', sans-serif", "fontWeight": "900" } },
+      "h2": { "typography": { "fontFamily": "'Nunito', sans-serif", "fontWeight": "800" } },
+      "h3": { "typography": { "fontFamily": "'Nunito', sans-serif", "fontWeight": "700" } },
+      "h4": { "typography": { "fontFamily": "'Nunito', sans-serif", "fontWeight": "700" } },
+      "button": {
+        "color": { "background": "#E8435A", "text": "#FFFFFF" },
+        "spacing": { "padding": { "top": "0.7rem", "bottom": "0.7rem", "left": "1.6rem", "right": "1.6rem" } },
+        "border": { "radius": "9999px" }
+      }
+    }
+  },
+  "customTemplates": [
+    { "name": "blank",       "postTypes": ["page"], "title": "Boş Şablon" },
+    { "name": "full-width",  "postTypes": ["page"], "title": "Tam Genişlik" },
+    { "name": "landing",     "postTypes": ["page"], "title": "Landing Page" }
+  ],
+  "templateParts": [
+    { "area": "header", "name": "header", "title": "Başlık" },
+    { "area": "footer", "name": "footer", "title": "Alt Bilgi" }
+  ]
+}
