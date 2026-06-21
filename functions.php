@@ -59,6 +59,7 @@ function bbm_scripts(): void {
     wp_enqueue_style( 'bbm-animations', BBM_URI . '/assets/css/animations.css', ['bbm-main'], BBM_VERSION );
     wp_enqueue_style( 'bbm-dark-mode',  BBM_URI . '/assets/css/dark-mode.css',  ['bbm-main'], BBM_VERSION );
     wp_enqueue_style( 'bbm-kvkk',       BBM_URI . '/assets/css/kvkk.css',       ['bbm-main'], BBM_VERSION );
+    wp_enqueue_style( 'bbm-components', BBM_URI . '/assets/css/components.css', ['bbm-main'], BBM_VERSION );
 
     if ( is_singular() && comments_open() ) wp_enqueue_script( 'comment-reply' );
 
@@ -67,9 +68,10 @@ function bbm_scripts(): void {
     wp_enqueue_script( 'bbm-darkmode',    BBM_URI . '/assets/js/dark-mode.js',   [],                              BBM_VERSION, true );
     wp_enqueue_script( 'bbm-kvkk-js',     BBM_URI . '/assets/js/kvkk.js',        [],                              BBM_VERSION, true );
     wp_enqueue_script( 'bbm-livesearch',  BBM_URI . '/assets/js/live-search.js', [],                              BBM_VERSION, true );
-    wp_enqueue_script( 'bbm-main',        BBM_URI . '/assets/js/main.js',        ['bbm-smiley','bbm-particles'],  BBM_VERSION, true );
+    wp_enqueue_script( 'bbm-main-js',     BBM_URI . '/assets/js/main.js',        ['bbm-smiley','bbm-particles'],  BBM_VERSION, true );
+    wp_enqueue_script( 'bbm-extras',      BBM_URI . '/assets/js/extras.js',      ['bbm-main-js'],                 BBM_VERSION, true );
 
-    wp_localize_script( 'bbm-main', 'BBM', [
+    wp_localize_script( 'bbm-main-js', 'BBM', [
         'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
         'nonce'    => wp_create_nonce( 'bbm-nonce' ),
         'homeUrl'  => home_url(),
@@ -89,6 +91,8 @@ function bbm_scripts(): void {
             'subscribed'  => __( 'Başarıyla abone oldunuz! 🎊',          'bitebimuv-dernek' ),
             'applying'    => __( 'Başvurunuz gönderiliyor…',            'bitebimuv-dernek' ),
             'applied'     => __( 'Başvurunuz alındı! 🤝',               'bitebimuv-dernek' ),
+            'planSelected'=> __( 'planı seçildi',                       'bitebimuv-dernek' ),
+            'registerFor' => __( 'Kayıt',                               'bitebimuv-dernek' ),
         ],
     ] );
 }
