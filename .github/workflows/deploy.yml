@@ -1,25 +1,8 @@
-# BiteBiMuv.org - Otomatik WordPress Tema Deploy Workflow
-# GitHub'a her push'ta temayı otomatik olarak sunucuya deploy eder.
-#
-# Gerekli GitHub Secrets (Settings > Secrets and variables > Actions):
-#   SFTP_HOST      - Sunucu hostname/IP (orn: bitebimuv.org veya 1.2.3.4)
-#   SFTP_USERNAME  - SFTP/SSH kullanıcı adı
-#   SFTP_PASSWORD  - SFTP/SSH şifre (SSH key kullanılıyorsa gerek yok)
-#   SFTP_PRIVATE_KEY - SSH özel anahtarı (password yerine)
-#   REMOTE_PATH    - Uzak sunucu tema yolu
-#                    Orn: /var/www/html/wp-content/themes/bitebimuv-dernek
-#   WP_CLI_PATH    - WP-CLI yolu (orn: wp veya /usr/local/bin/wp)
-
-name: 🚀 BiteBiMuv.org - Tema Deploy
+name: Deploy to bitebimuv.org
 
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - 'README.md'
-      - '.github/ISSUE_TEMPLATE/**'
-      - 'docs/**'
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       environment:
@@ -27,212 +10,299 @@ on:
         required: true
         default: 'production'
         type: choice
-        options:
-          - production
-          - staging
+        options: [ production, staging ]
 
-env:
-  THEME_NAME: bitebimuv-dernek
-  PHP_VERSION: '8.2'
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # =========================================================
-  # JOB 1: Lint ve sözdizimi kontrolü
-  # =========================================================
+  # ─── JOB 1: Lint & Validate ─────────────────────────────────────────────────
   lint:
-    name: 🔍 Kod Kalite Kontrolü
+    name: PHP Lint & Validate
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Kodu çek
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: PHP kur
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ env.PHP_VERSION }}
-          tools: phpcs
-          coverage: none
+          php-version: '8.2'
+          tools: php-cs-fixer
 
-      - name: PHP sözdizimi kontrolü
+      - name: PHP Syntax Check
         run: |
-          find . -name "*.php" \
-            -not -path "./.git/*" \
-            -not -path "./vendor/*" \
-            -not -path "./node_modules/*" \
-            | xargs -I {} php -l {} 2>&1 | grep -E "(Error|Warning)" || true
-          echo "✅ PHP sözdizimi kontrolü tamamlandı."
+          find . -name "*.php" -not -path "./.git/*" | while read file; do
+            php -l "$file" || exit 1
+          done
+          echo "✅ Tüm PHP dosyaları geçerli sözdizimi"
 
-      - name: Dosya boyutu kontrolü
+      - name: Validate theme structure
         run: |
-          echo "📊 Tema dosya boyutları:"
-          du -sh . --exclude=.git
-          echo "✅ Boyut kontrolü tamam."
+          echo "Tema yapısı doğrulanıyor..."
+          required_files=("style.css" "functions.php" "index.php" "header.php" "footer.php")
+          for f in "${required_files[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "❌ Zorunlu dosya eksik: $f"
+              exit 1
+            fi
+          done
+          echo "✅ Tema yapısı doğrulandı"
 
-  # =========================================================
-  # JOB 2: Tema paketi oluştur
-  # =========================================================
+      - name: Check theme headers
+        run: |
+          if ! grep -q "Theme Name:" style.css; then
+            echo "❌ style.css'de Theme Name başlığı bulunamadı"
+            exit 1
+          fi
+          echo "✅ Tema başlıkları geçerli"
+
+  # ─── JOB 2: Build & Optimize ────────────────────────────────────────────────
   build:
-    name: 📦 Tema Paketi Oluştur
+    name: Build & Optimize Assets
     runs-on: ubuntu-latest
     needs: lint
+    timeout-minutes: 10
     steps:
-      - name: Kodu çek
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Tema paketini oluştur
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies (if package.json exists)
         run: |
-          mkdir -p /tmp/theme-package/${{ env.THEME_NAME }}
+          if [ -f "package.json" ]; then
+            npm ci --prefer-offline
+          else
+            echo "package.json bulunamadı, build adımı atlanıyor"
+          fi
+
+      - name: Verify CSS files
+        run: |
+          css_count=$(find assets/css -name "*.css" | wc -l)
+          echo "✅ $css_count CSS dosyası bulundu"
+          ls -lh assets/css/
+
+      - name: Verify JS files
+        run: |
+          js_count=$(find assets/js -name "*.js" | wc -l)
+          echo "✅ $js_count JS dosyası bulundu"
+          ls -lh assets/js/
+
+      - name: Create deployment package
+        run: |
+          mkdir -p /tmp/theme-package
           rsync -av \
             --exclude='.git' \
             --exclude='.github' \
-            --exclude='*.log' \
-            --exclude='.DS_Store' \
             --exclude='node_modules' \
-            --exclude='vendor' \
+            --exclude='*.log' \
+            --exclude='.env*' \
+            --exclude='tests' \
+            --exclude='*.test.js' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
             --exclude='*.md' \
-            --exclude='.gitignore' \
-            . /tmp/theme-package/${{ env.THEME_NAME }}/
-          echo "✅ Tema paketi oluşturuldu:"
-          ls -la /tmp/theme-package/${{ env.THEME_NAME }}/
+            . /tmp/theme-package/
+          echo "📦 Paket oluşturuldu"
+          du -sh /tmp/theme-package
 
-      - name: Paket artifact olarak kaydet
+      - name: Upload deployment artifact
         uses: actions/upload-artifact@v4
         with:
-          name: theme-package
-          path: /tmp/theme-package/
-          retention-days: 5
+          name: theme-package-${{ github.sha }}
+          path: /tmp/theme-package
+          retention-days: 3
 
-  # =========================================================
-  # JOB 3: Sunucuya deploy et (SFTP/SSH)
-  # =========================================================
+  # ─── JOB 3: Deploy ──────────────────────────────────────────────────────────
   deploy:
-    name: 🌍 Sunucuya Deploy Et
+    name: Deploy to Production
     runs-on: ubuntu-latest
     needs: build
+    timeout-minutes: 15
     environment:
-      name: ${{ github.event.inputs.environment || 'production' }}
-      url: https://www.bitebimuv.org
-
+      name: production
+      url: https://bitebimuv.org
     steps:
-      - name: Kodu çek
-        uses: actions/checkout@v4
-
-      - name: Build artifact indir
+      - name: Download deployment artifact
         uses: actions/download-artifact@v4
         with:
-          name: theme-package
-          path: /tmp/theme-package/
+          name: theme-package-${{ github.sha }}
+          path: /tmp/theme-package
 
-      # --- SFTP DEPLOY (FTP/SFTP hosting için) ---
-      - name: 📡 SFTP ile deploy et
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          server: ${{ secrets.SFTP_HOST }}
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          ssh_private_key: ${{ secrets.SFTP_PRIVATE_KEY }}
-          local_path: /tmp/theme-package/${{ env.THEME_NAME }}
-          remote_path: ${{ secrets.REMOTE_PATH }}
-          delete_remote_files: true
-          sftp_only: false
-        continue-on-error: true
-        id: sftp-deploy
-
-      # --- SSH + RSYNC DEPLOY (VPS/dedicated server için alternatif) ---
-      # Bu adımı SFTP yerine kullanmak istersen aktif hale getir.
-      # - name: 📡 SSH + rsync ile deploy et
-      #   uses: burnett01/rsync-deployments@7.0.1
-      #   with:
-      #     switches: -avzr --delete --exclude='.git'
-      #     path: /tmp/theme-package/${{ env.THEME_NAME }}/
-      #     remote_path: ${{ secrets.REMOTE_PATH }}/
-      #     remote_host: ${{ secrets.SFTP_HOST }}
-      #     remote_user: ${{ secrets.SFTP_USERNAME }}
-      #     remote_key: ${{ secrets.SFTP_PRIVATE_KEY }}
-
-      # --- WP-CLI ile temayı aktif et ---
-      - name: 🎨 WP-CLI ile temayı aktif et
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SFTP_HOST }}
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          key: ${{ secrets.SFTP_PRIVATE_KEY }}
-          script: |
-            # WP-CLI yolu
-            WP="${WP_CLI_PATH:-wp}"
-
-            # WordPress klök dizine git (REMOTE_PATH'ten belirle)
-            WP_ROOT=$(echo "${{ secrets.REMOTE_PATH }}" | sed 's|/wp-content/themes/.*||')
-
-            if [ -f "$WP_ROOT/wp-config.php" ]; then
-              cd "$WP_ROOT"
-
-              # Temayı aktif et
-              $WP theme activate ${{ env.THEME_NAME }} --allow-root || true
-
-              # Cache temizle
-              $WP cache flush --allow-root || true
-              $WP rewrite flush --allow-root || true
-
-              echo "✅ Tema aktif edildi ve cache temizlendi."
-            else
-              echo "⚠️ WP kök dizin bulunamadı: $WP_ROOT"
-              echo "⚠️ Temayı WordPress panelinden manuel olarak aktif edin."
-            fi
-        continue-on-error: true
-
-      - name: 🎉 Deploy tamamlandı!
+      - name: Setup SSH
+        if: ${{ env.SFTP_HOST != '' }}
         run: |
-          echo "================================================"
-          echo "🎉 BiteBiMuv Dernek teması başarıyla deploy edildi!"
-          echo "🌐 Site: https://www.bitebimuv.org"
-          echo "🕑 Deploy zamanı: $(date '+%d/%m/%Y %H:%M:%S %Z')"
-          echo "🌿 Commit: ${{ github.sha }}"
-          echo "================================================"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.SFTP_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName ${{ secrets.SFTP_HOST }}
+            User ${{ secrets.SFTP_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking accept-new
+            ConnectTimeout 30
+          EOF
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
 
-  # =========================================================
-  # JOB 4: WordPress.com deploy (WordPress.com hosting için)
-  # =========================================================
-  # Bu job yalnızca WordPress.com hosting kullanılıyorsa aktif edilmeli.
-  # Secrets: WP_COM_SITE_ID, WP_COM_TOKEN
-  #
-  # deploy-wpcom:
-  #   name: 📤 WordPress.com Deploy
-  #   runs-on: ubuntu-latest
-  #   needs: build
-  #   steps:
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: theme-package
-  #         path: /tmp/theme-package/
-  #
-  #     - name: WordPress.com REST API ile yukleme
-  #       run: |
-  #         cd /tmp/theme-package/
-  #         zip -r ${{ env.THEME_NAME }}.zip ${{ env.THEME_NAME }}/
-  #
-  #         curl -X POST \
-  #           -H "Authorization: Bearer ${{ secrets.WP_COM_TOKEN }}" \
-  #           -F "themezip=@${{ env.THEME_NAME }}.zip" \
-  #           "https://public-api.wordpress.com/rest/v1.1/sites/${{ secrets.WP_COM_SITE_ID }}/themes/mine"
+      - name: Deploy via SFTP (SSH key)
+        if: ${{ env.SFTP_HOST != '' && env.SSH_PRIVATE_KEY != '' }}
+        run: |
+          echo "🚀 SFTP ile deploy ediliyor: ${{ secrets.SFTP_HOST }}"
+          
+          REMOTE_PATH="${{ secrets.SFTP_REMOTE_PATH }}"
+          THEME_DIR="${REMOTE_PATH:-/public_html/wp-content/themes/bitebimuv}"
+          
+          rsync -avz \
+            --delete \
+            --timeout=60 \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new" \
+            /tmp/theme-package/ \
+            "${{ secrets.SFTP_USER }}@${{ secrets.SFTP_HOST }}:${THEME_DIR}/"
+          
+          echo "✅ Dosyalar aktarıldı: ${THEME_DIR}"
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
-  # =========================================================
-  # JOB 5: Bildirim
-  # =========================================================
-  notify:
-    name: 💬 Bildirim Gönder
+      - name: WordPress cache temizle (WP-CLI)
+        if: ${{ env.SFTP_HOST != '' && env.SSH_PRIVATE_KEY != '' }}
+        run: |
+          ssh deploy-target "
+            if command -v wp &>/dev/null; then
+              WP_PATH=\$(find /public_html -name 'wp-config.php' -maxdepth 3 | head -1 | xargs dirname 2>/dev/null || echo '/public_html')
+              cd \"\$WP_PATH\" && wp cache flush --allow-root 2>/dev/null || true
+              wp rewrite flush --allow-root 2>/dev/null || true
+              echo '✅ WordPress önbelleği temizlendi'
+            else
+              echo 'ℹ️ WP-CLI bulunamadı, önbellek temizleme atlandı'
+            fi
+          " || echo "⚠️ SSH bağlantısı başarısız, önbellek temizleme atlandı"
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Fallback SFTP deploy (password)
+        if: ${{ env.SFTP_HOST != '' && env.SFTP_PASSWORD != '' && env.SSH_PRIVATE_KEY == '' }}
+        run: |
+          echo "🔐 SFTP şifreli deploy başlatılıyor..."
+          sudo apt-get install -y sshpass lftp 2>/dev/null
+          
+          REMOTE_PATH="${{ secrets.SFTP_REMOTE_PATH }}"
+          THEME_DIR="${REMOTE_PATH:-/public_html/wp-content/themes/bitebimuv}"
+          
+          lftp -u "${{ secrets.SFTP_USER }},${{ secrets.SFTP_PASSWORD }}" \
+            -e "set ftp:ssl-allow false; set net:timeout 30; mirror --reverse --delete --verbose /tmp/theme-package/ ${THEME_DIR}/; bye" \
+            "${{ secrets.SFTP_HOST }}" || exit 1
+          
+          echo "✅ SFTP deploy tamamlandı"
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Health check
+        run: |
+          echo "🔍 Site sağlık kontrolü yapılıyor..."
+          
+          for i in 1 2 3; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 15 \
+              --user-agent "BBM-Deploy-Check/1.0" \
+              "https://bitebimuv.org" 2>/dev/null || echo "000")
+            
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ] || [ "$STATUS" = "302" ]; then
+              echo "✅ Site yanıt veriyor (HTTP $STATUS)"
+              break
+            else
+              echo "⚠️ Deneme $i/3: HTTP $STATUS - 10 saniye bekleniyor..."
+              sleep 10
+            fi
+          done
+          
+          echo "Kontrol URL: https://bitebimuv.org"
+
+  # ─── JOB 4: Verify ──────────────────────────────────────────────────────────
+  verify:
+    name: Deployment Verification
     runs-on: ubuntu-latest
     needs: deploy
+    timeout-minutes: 5
     if: always()
     steps:
-      - name: Deploy sonucunu bildir
+      - name: Deployment summary
         run: |
-          STATUS="${{ needs.deploy.result }}"
-          if [ "$STATUS" = "success" ]; then
-            echo "✅ Deploy başarılı: bitebimuv.org güncellendi!"
+          echo "## 🚀 Deployment Özeti" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Bilgi | Değer |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Site** | https://bitebimuv.org |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tetikleyen** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Zaman** | $(date -u '+%Y-%m-%d %H:%M UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "### ✅ Deploy Başarılı" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Deploy başarısız! Log'ları kontrol edin."
+            echo "### ❌ Deploy Başarısız" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Secrets yapılandırıldı mı? Kontrol edin:" >> $GITHUB_STEP_SUMMARY
+            echo "- \`SFTP_HOST\` - FTP/SSH sunucu adresi" >> $GITHUB_STEP_SUMMARY
+            echo "- \`SFTP_USER\` - FTP/SSH kullanıcı adı" >> $GITHUB_STEP_SUMMARY
+            echo "- \`SSH_PRIVATE_KEY\` veya \`SFTP_PASSWORD\` - Kimlik doğrulama" >> $GITHUB_STEP_SUMMARY
+            echo "- \`SFTP_REMOTE_PATH\` - Tema dizini yolu (opsiyonel)" >> $GITHUB_STEP_SUMMARY
           fi
-          # Slack/email bildirimi için:
-          # secrets.SLACK_WEBHOOK_URL veya secrets.NOTIFY_EMAIL ekleyin
+
+  # ─── JOB 5: Notify ──────────────────────────────────────────────────────────
+  notify:
+    name: Bildirim Gönder
+    runs-on: ubuntu-latest
+    needs: [ deploy, verify ]
+    if: always()
+    steps:
+      - name: Slack notification (başarılı)
+        if: needs.deploy.result == 'success' && env.SLACK_WEBHOOK != ''
+        run: |
+          curl -s -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"✅ *bitebimuv.org* başarıyla güncellendi!\",
+              \"blocks\": [{
+                \"type\": \"section\",
+                \"text\": {
+                  \"type\": \"mrkdwn\",
+                  \"text\": \"✅ *bitebimuv.org* deploy tamamlandı\\n*Branch:* \`${{ github.ref_name }}\`\\n*Commit:* \`${{ github.sha }}\`\\n*Yapan:* ${{ github.actor }}\\n*Site:* https://bitebimuv.org\"
+                }
+              }]
+            }" || echo "Slack bildirimi gönderilemedi"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Slack notification (başarısız)
+        if: needs.deploy.result == 'failure' && env.SLACK_WEBHOOK != ''
+        run: |
+          curl -s -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"❌ *bitebimuv.org* deploy BAŞARISIZ!\",
+              \"blocks\": [{
+                \"type\": \"section\",
+                \"text\": {
+                  \"type\": \"mrkdwn\",
+                  \"text\": \"❌ *bitebimuv.org* deploy başarısız oldu\\n*Branch:* \`${{ github.ref_name }}\`\\n*Yapan:* ${{ github.actor }}\\n*Kontrol:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+                }
+              }]
+            }" || echo "Slack bildirimi gönderilemedi"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
