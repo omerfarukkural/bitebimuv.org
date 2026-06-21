@@ -1,0 +1,113 @@
+/* BiteBiMuv — kvkk.css (Çerez Banner) v3.0 */
+
+.bbm-kvkk-banner {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  right: 1.5rem;
+  max-width: 580px;
+  z-index: var(--z-toast);
+  transform: translateY(120%);
+  opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+  pointer-events: none;
+}
+.bbm-kvkk-banner.is-visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.bbm-kvkk-inner {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 16px 64px rgba(0,0,0,.18), 0 4px 16px rgba(0,0,0,.1);
+  border: 1px solid rgba(0,0,0,.06);
+  padding: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  position: relative;
+}
+.bbm-dark .bbm-kvkk-inner {
+  background: #1c2128;
+  border-color: rgba(255,255,255,.08);
+}
+.bbm-kvkk-icon { flex-shrink: 0; }
+.bbm-kvkk-content { flex: 1; min-width: 0; }
+.bbm-kvkk-content h4 {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--bbm-gray-900);
+}
+.bbm-dark .bbm-kvkk-content h4 { color: #e6edf3; }
+.bbm-kvkk-content p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--bbm-gray-500);
+  line-height: 1.55;
+}
+.bbm-kvkk-content p a {
+  color: var(--bbm-primary);
+  font-weight: 600;
+}
+.bbm-kvkk-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+.bbm-kvkk-btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.bbm-kvkk-btn--primary {
+  background: var(--bbm-primary);
+  color: #fff;
+}
+.bbm-kvkk-btn--primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+.bbm-kvkk-btn--outline {
+  background: transparent;
+  border-color: var(--bbm-gray-300);
+  color: var(--bbm-gray-600);
+}
+.bbm-kvkk-btn--outline:hover {
+  border-color: var(--bbm-gray-400);
+  background: var(--bbm-gray-50);
+}
+.bbm-dark .bbm-kvkk-btn--outline {
+  border-color: rgba(255,255,255,.2);
+  color: rgba(255,255,255,.7);
+}
+.bbm-dark .bbm-kvkk-btn--outline:hover { background: rgba(255,255,255,.05); }
+.bbm-kvkk-close {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--bbm-gray-100);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--bbm-gray-500);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.bbm-kvkk-close:hover { background: var(--bbm-error); color: #fff; }
+.bbm-dark .bbm-kvkk-close { background: rgba(255,255,255,.08); color: rgba(255,255,255,.5); }
+
+@media (max-width: 480px) {
+  .bbm-kvkk-banner { left: 0.75rem; right: 0.75rem; bottom: 0.75rem; }
+  .bbm-kvkk-inner  { flex-direction: column; }
+  .bbm-kvkk-icon   { display: none; }
+}
