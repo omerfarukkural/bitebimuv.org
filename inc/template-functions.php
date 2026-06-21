@@ -1,214 +1,227 @@
 <?php
 /**
- * Şablon Yardımcı Fonksiyonları
- *
- * @package bitebimuv-dernek
+ * BiteBiMuv — Şablon Yardımcı Fonksiyonlar
  */
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+/* ── SVG Smiley Generator ── */
+function bbm_get_smiley( string $size = 'medium', string $id = 'bbm' ): string {
+    $sizes = [ 'small'=>80, 'medium'=>140, 'large'=>220, 'hero'=>300, 'xlarge'=>400 ];
+    $px    = $sizes[$size] ?? 140;
+    $h     = $px;
+    return <<<SVG
+<svg id="{$id}" class="bbm-smiley bbm-smiley--{$size}" width="{$px}" height="{$h}"
+     viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-label="Gülen yüz maskotu">
+  <defs>
+    <radialGradient id="{$id}-face-grad" cx="45%" cy="35%" r="65%">
+      <stop offset="0%"   stop-color="#FFE566"/>
+      <stop offset="60%"  stop-color="#FFD93D"/>
+      <stop offset="100%" stop-color="#F5A623"/>
+    </radialGradient>
+    <radialGradient id="{$id}-blush-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FF8BA0" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#FF8BA0" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="{$id}-shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(0,0,0,0.2)"/>
+    </filter>
+    <filter id="{$id}-glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <clipPath id="{$id}-face-clip">
+      <circle cx="100" cy="100" r="82"/>
+    </clipPath>
+  </defs>
 
-/**
- * Belirtilen şablon parçasını dahil et
- */
-function bbm_get_section( $section ) {
-    get_template_part( 'template-parts/sections/' . $section );
+  <!-- Shadow -->
+  <ellipse cx="100" cy="190" rx="58" ry="10" fill="rgba(0,0,0,0.15)"/>
+
+  <!-- Face base -->
+  <circle cx="100" cy="100" r="84" fill="url(#{$id}-face-grad)" filter="url(#{$id}-shadow)"/>
+
+  <!-- Shine -->
+  <ellipse cx="74" cy="68" rx="18" ry="12" fill="rgba(255,255,255,0.35)" transform="rotate(-30 74 68)"/>
+
+  <!-- Hair strands -->
+  <g fill="#8B5E3C" opacity="0.7">
+    <ellipse cx="60" cy="22" rx="5" ry="12" transform="rotate(-15 60 22)"/>
+    <ellipse cx="78" cy="16" rx="4" ry="10" transform="rotate(-5 78 16)"/>
+    <ellipse cx="96" cy="14" rx="4" ry="11"/>
+    <ellipse cx="114" cy="16" rx="4" ry="10" transform="rotate(5 114 16)"/>
+    <ellipse cx="130" cy="24" rx="4" ry="10" transform="rotate(18 130 24)"/>
+  </g>
+
+  <!-- Left Eye white -->
+  <ellipse id="{$id}-left-eye" cx="72" cy="88" rx="14" ry="16" fill="white"/>
+  <!-- Right Eye white -->
+  <ellipse id="{$id}-right-eye" cx="128" cy="88" rx="14" ry="16" fill="white"/>
+
+  <!-- Left Pupil -->
+  <circle id="{$id}-left-pupil" cx="72" cy="90" r="7" fill="#2D3561"/>
+  <circle cx="0" cy="0" r="2.5" fill="white" id="{$id}-left-shine" transform="translate(69,87)"/>
+  <!-- Right Pupil -->
+  <circle id="{$id}-right-pupil" cx="128" cy="90" r="7" fill="#2D3561"/>
+  <circle cx="0" cy="0" r="2.5" fill="white" id="{$id}-right-shine" transform="translate(125,87)"/>
+
+  <!-- Eyelids (blink) -->
+  <ellipse id="{$id}-left-lid"  cx="72"  cy="84" rx="14" ry="0" fill="#FFD93D"/>
+  <ellipse id="{$id}-right-lid" cx="128" cy="84" rx="14" ry="0" fill="#FFD93D"/>
+
+  <!-- Eyebrows -->
+  <path id="{$id}-left-brow"  d="M58,74 Q72,68 86,72" stroke="#6B4F2A" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <path id="{$id}-right-brow" d="M114,72 Q128,68 142,74" stroke="#6B4F2A" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Nose -->
+  <ellipse cx="100" cy="110" rx="5" ry="3.5" fill="#F0A020" opacity="0.6"/>
+
+  <!-- Smile -->
+  <path id="{$id}-smile" d="M72,126 Q100,148 128,126" stroke="#6B4F2A" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <!-- Teeth -->
+  <path id="{$id}-teeth" d="M80,128 Q100,140 120,128" fill="white" stroke="#ddd" stroke-width="0.5" clip-path="url(#{$id}-face-clip)" opacity="0"/>
+
+  <!-- Cheeks -->
+  <ellipse id="{$id}-left-cheek"  cx="52"  cy="118" rx="18" ry="12" fill="url(#{$id}-blush-grad)" opacity="0"/>
+  <ellipse id="{$id}-right-cheek" cx="148" cy="118" rx="18" ry="12" fill="url(#{$id}-blush-grad)" opacity="0"/>
+
+  <!-- Freckles -->
+  <g fill="#D4891A" opacity="0.4">
+    <circle cx="48"  cy="108" r="2"/><circle cx="44"  cy="116" r="1.5"/><circle cx="52"  cy="114" r="1.5"/>
+    <circle cx="152" cy="108" r="2"/><circle cx="156" cy="116" r="1.5"/><circle cx="148" cy="114" r="1.5"/>
+  </g>
+</svg>
+SVG;
 }
 
-/**
- * İnteraktif smiley SVG'yi döndür
- */
-function bbm_get_smiley( $size = 'medium', $id = 'bbm-smiley' ) {
-    $sizes = [ 'small' => '80px', 'medium' => '140px', 'large' => '220px', 'hero' => '300px' ];
-    $w = $sizes[ $size ] ?? '140px';
-    ob_start();
-    ?>
-    <svg id="<?php echo esc_attr( $id ); ?>" class="bbm-smiley bbm-smiley--<?php echo esc_attr( $size ); ?>" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="<?php esc_attr_e( 'BiteBiMuv maskotu', 'bitebimuv-dernek' ); ?>" style="width:<?php echo esc_attr( $w ); ?>;height:<?php echo esc_attr( $w ); ?>">
-        <defs>
-            <radialGradient id="bbm-face-grad-<?php echo esc_attr( $id ); ?>" cx="42%" cy="38%" r="60%">
-                <stop offset="0%" stop-color="#FFE566"/>
-                <stop offset="100%" stop-color="#FFB800"/>
-            </radialGradient>
-            <radialGradient id="bbm-cheek-grad" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#FF9BB5" stop-opacity="0.9"/>
-                <stop offset="100%" stop-color="#FF9BB5" stop-opacity="0"/>
-            </radialGradient>
-            <filter id="bbm-shadow">
-                <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.2)"/>
-            </filter>
-        </defs>
-
-        <!-- Gölge -->
-        <ellipse cx="50" cy="95" rx="36" ry="5" fill="rgba(0,0,0,0.08)"/>
-
-        <!-- Ana yüz -->
-        <circle cx="50" cy="48" r="44" fill="url(#bbm-face-grad-<?php echo esc_attr( $id ); ?>)" filter="url(#bbm-shadow)"/>
-        <circle cx="50" cy="48" r="44" fill="none" stroke="#E8A800" stroke-width="1.2" opacity="0.6"/>
-
-        <!-- Sol göz -->
-        <ellipse cx="33" cy="38" rx="9" ry="10.5" fill="white"/>
-        <circle id="<?php echo esc_attr( $id ); ?>-left-pupil" cx="33" cy="38" r="5.5" fill="#1A1A2E"/>
-        <circle cx="30.5" cy="35.5" r="2" fill="white" opacity="0.9"/>
-
-        <!-- Sağ göz -->
-        <ellipse cx="67" cy="38" rx="9" ry="10.5" fill="white"/>
-        <circle id="<?php echo esc_attr( $id ); ?>-right-pupil" cx="67" cy="38" r="5.5" fill="#1A1A2E"/>
-        <circle cx="64.5" cy="35.5" r="2" fill="white" opacity="0.9"/>
-
-        <!-- Sol göz kapağı (kırpma için) -->
-        <ellipse id="<?php echo esc_attr( $id ); ?>-left-lid" cx="33" cy="29" rx="9" ry="8.5" fill="#FFD93D" class="bbm-eyelid"/>
-        <!-- Sağ göz kapağı -->
-        <ellipse id="<?php echo esc_attr( $id ); ?>-right-lid" cx="67" cy="29" rx="9" ry="8.5" fill="#FFD93D" class="bbm-eyelid"/>
-
-        <!-- Sol kaş -->
-        <path id="<?php echo esc_attr( $id ); ?>-left-brow" d="M 24 24 Q 33 19 42 24" stroke="#8B6914" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-        <!-- Sağ kaş -->
-        <path id="<?php echo esc_attr( $id ); ?>-right-brow" d="M 58 24 Q 67 19 76 24" stroke="#8B6914" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-
-        <!-- Burun -->
-        <path d="M 48.5 52 Q 46 56 48.5 58 Q 51.5 56 50.5 52" fill="#CC8800" opacity="0.55"/>
-
-        <!-- Gülümseme -->
-        <path id="<?php echo esc_attr( $id ); ?>-smile" d="M 28 65 Q 50 78 72 65" stroke="#8B5E14" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-
-        <!-- Dişler (yüksek scroll'da görünür) -->
-        <path id="<?php echo esc_attr( $id ); ?>-teeth" d="M 30 67 Q 50 80 70 67 L 70 69 Q 50 83 30 69 Z" fill="white" opacity="0" stroke="#DDD" stroke-width="0.5"/>
-
-        <!-- Sol yanak pembesi -->
-        <ellipse id="<?php echo esc_attr( $id ); ?>-left-cheek" cx="18" cy="56" rx="11" ry="7" fill="url(#bbm-cheek-grad)" opacity="0" style="transition:opacity 0.4s ease"/>
-        <!-- Sağ yanak pembesi -->
-        <ellipse id="<?php echo esc_attr( $id ); ?>-right-cheek" cx="82" cy="56" rx="11" ry="7" fill="url(#bbm-cheek-grad)" opacity="0" style="transition:opacity 0.4s ease"/>
-
-        <!-- Çil noktaları -->
-        <circle cx="16" cy="58" r="1.5" fill="#FF8FAB" opacity="0.35"/>
-        <circle cx="21" cy="61" r="1" fill="#FF8FAB" opacity="0.28"/>
-        <circle cx="84" cy="58" r="1.5" fill="#FF8FAB" opacity="0.35"/>
-        <circle cx="79" cy="61" r="1" fill="#FF8FAB" opacity="0.28"/>
-
-        <!-- Saç (üst) -->
-        <path d="M 28 6 Q 23 1 20 6" stroke="#C8960A" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
-        <path d="M 42 3 Q 39 -2 36 3" stroke="#C8960A" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
-        <path d="M 58 3 Q 61 -2 64 3" stroke="#C8960A" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
-        <path d="M 72 6 Q 77 1 80 6" stroke="#C8960A" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
-    </svg>
-    <?php
-    return ob_get_clean();
-}
-
-/**
- * Sosyal medya ikonlarını döndür
- */
-function bbm_get_social_links( $class = '' ) {
-    $links = [
-        'facebook'  => [ get_theme_mod( 'bbm_facebook' ),  'Facebook',  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>' ],
-        'instagram' => [ get_theme_mod( 'bbm_instagram' ), 'Instagram', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>' ],
-        'twitter'   => [ get_theme_mod( 'bbm_twitter' ),   'X (Twitter)', '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>' ],
-        'youtube'   => [ get_theme_mod( 'bbm_youtube' ),   'YouTube',   '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>' ],
-        'linkedin'  => [ get_theme_mod( 'bbm_linkedin' ),  'LinkedIn',  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>' ],
-    ];
-
-    $output = '';
-    foreach ( $links as $key => [ $url, $label, $icon ] ) {
-        if ( empty( $url ) ) continue;
-        $output .= sprintf(
-            '<a href="%s" class="bbm-social-link bbm-social-link--%s %s" target="_blank" rel="noopener noreferrer" aria-label="%s">%s</a>',
-            esc_url( $url ), esc_attr( $key ), esc_attr( $class ), esc_attr( $label ), $icon
-        );
-    }
-    return $output;
-}
-
-/**
- * Yaklaşan etkinlikleri getir
- */
-function bbm_get_upcoming_events( $count = 3 ) {
+/* ── Upcoming Events ── */
+function bbm_get_upcoming_events( int $count = 4 ): WP_Query {
     return new WP_Query( [
         'post_type'      => 'bbm_event',
         'posts_per_page' => $count,
-        'meta_key'       => 'bbm_event_date',
+        'meta_key'       => '_bbm_event_date',
         'orderby'        => 'meta_value',
         'order'          => 'ASC',
-        'meta_query'     => [
-            [
-                'key'     => 'bbm_event_date',
-                'value'   => date( 'Y-m-d' ),
-                'compare' => '>=',
-                'type'    => 'DATE',
-            ],
-        ],
+        'meta_query'     => [[
+            'key'     => '_bbm_event_date',
+            'value'   => date('Y-m-d'),
+            'compare' => '>=',
+            'type'    => 'DATE',
+        ]],
     ] );
 }
 
-/**
- * Etkinlik tarihi formatlı döndür
- */
-function bbm_get_event_date_formatted( $post_id, $format = 'd M Y' ) {
-    $date = get_post_meta( $post_id, 'bbm_event_date', true );
-    if ( ! $date ) return '';
-    $months_tr = [
-        'Jan' => 'Oca', 'Feb' => 'Şub', 'Mar' => 'Mar',
-        'Apr' => 'Nis', 'May' => 'May', 'Jun' => 'Haz',
-        'Jul' => 'Tem', 'Aug' => 'Ağu', 'Sep' => 'Eyl',
-        'Oct' => 'Eki', 'Nov' => 'Kas', 'Dec' => 'Ara',
+/* ── Turkish formatted event date ── */
+function bbm_get_event_date_formatted( int $post_id = 0, string $format = 'full' ): string {
+    $post_id = $post_id ?: get_the_ID();
+    $raw     = get_post_meta( $post_id, '_bbm_event_date', true );
+    if ( ! $raw ) return __( 'Tarih belirtilmedi', 'bitebimuv-dernek' );
+
+    $months_short = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+    $months_long  = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+    $days         = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+
+    $ts      = strtotime($raw);
+    $day     = (int) date('j',  $ts);
+    $monthI  = (int) date('n',  $ts) - 1;
+    $year    = (int) date('Y',  $ts);
+    $dow     = (int) date('w',  $ts);
+    $time    = get_post_meta( $post_id, '_bbm_event_time', true ) ?: '';
+
+    return match ($format) {
+        'short'   => "{$day} {$months_short[$monthI]}",
+        'medium'  => "{$day} {$months_long[$monthI]} {$year}",
+        'day'     => (string) $day,
+        'month'   => $months_short[$monthI],
+        'year'    => (string) $year,
+        'dayname' => $days[$dow],
+        default   => "{$days[$dow]}, {$day} {$months_long[$monthI]} {$year}" . ($time ? " — {$time}" : ''),
+    };
+}
+
+/* ── Social Links SVG ── */
+function bbm_get_social_links( string $class = 'bbm-social-links' ): string {
+    $icons = [
+        'facebook'  => ['Facebook',  'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z'],
+        'instagram' => ['Instagram', 'M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37M17.5 6.5h.01M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z'],
+        'twitter'   => ['Twitter',   'M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z'],
+        'youtube'   => ['YouTube',   'M22.54 6.42A2.78 2.78 0 0 0 20.59 4.47C18.88 4 12 4 12 4s-6.88 0-8.59.47a2.78 2.78 0 0 0-2 1.95A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.95C5.12 20 12 20 12 20s6.88 0 8.59-.47a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58M10 15.5v-7l6 3.5z'],
+        'linkedin'  => ['LinkedIn',  'M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6M2 9h4v12H2z M4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4'],
+        'whatsapp'  => ['WhatsApp',  'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347'],
+        'telegram'  => ['Telegram',  'M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0m4.962 7.069-4.996 2.287-6.337-2.43c-.145-.05-.266-.15-.26-.266.013-.185.204-.27.427-.34l15.294-5.877c.313-.115.615.077.478.44l-2.607 13.092c-.205.814-.57 1.035-1 .685L13.97 13.8l-2.19 2.11c-.242.233-.447.362-.713.362-.22 0-.48-.142-.617-.435l-1.64-5.41 5.497 2.09c.207.079.267.005.267-.005L16.906 7.07z'],
+        'tiktok'    => ['TikTok',    'M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.5V6.73a4.85 4.85 0 0 1-1.01-.04'],
     ];
-    $formatted = date( $format, strtotime( $date ) );
-    return strtr( $formatted, $months_tr );
+
+    $html  = "<div class=\"{$class}\">";
+    $found = false;
+    foreach ( $icons as $platform => [$label, $path] ) {
+        $url = get_theme_mod( "bbm_social_{$platform}", '' );
+        if ( ! $url ) continue;
+        $found = true;
+        $is_whatsapp = $platform === 'whatsapp';
+        if ( $is_whatsapp ) $url = 'https://wa.me/' . preg_replace('/[^0-9]/', '', $url);
+        $html .= sprintf(
+            '<a href="%s" class="bbm-social-link bbm-social-link--%s" target="_blank" rel="noopener noreferrer" aria-label="%s">' .
+            '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="%s" stroke="%s" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="%s"/></svg>' .
+            '</a>',
+            esc_url($url), esc_attr($platform), esc_attr($label),
+            in_array($platform,['facebook','instagram','youtube','whatsapp','telegram','tiktok'],'strict') ? 'currentColor' : 'none',
+            in_array($platform,['twitter','linkedin'],'strict') ? 'currentColor' : 'none',
+            esc_attr($path)
+        );
+    }
+    if ( ! $found ) $html .= '<span class="bbm-social-empty">' . __('Sosyal medya bağlantıları henüz ayarlanmamış.','bitebimuv-dernek') . '</span>';
+    $html .= '</div>';
+    return $html;
 }
 
-/**
- * Siteye eklenen sayfa mı?
- */
-function bbm_is_page_template_active( $template ) {
-    return is_page_template( $template );
-}
-
-/**
- * Paylaşım butonları
- */
-function bbm_share_buttons() {
+/* ── Share Buttons ── */
+function bbm_share_buttons(): void {
     $url   = urlencode( get_permalink() );
     $title = urlencode( get_the_title() );
+    $text  = urlencode( get_the_title() . ' — ' . get_bloginfo('name') );
     ?>
-    <div class="bbm-share-buttons">
-        <span class="bbm-share-label"><?php _e( 'Paylaş:', 'bitebimuv-dernek' ); ?></span>
+    <div class="bbm-share-buttons" role="group" aria-label="<?php _e('Paylaş','bitebimuv-dernek'); ?>">
+        <span class="bbm-share-label"><?php _e('Paylaş:','bitebimuv-dernek'); ?></span>
         <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo $url; ?>" target="_blank" rel="noopener" class="bbm-share-btn bbm-share-btn--facebook" aria-label="Facebook'ta paylaş">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            Facebook
         </a>
-        <a href="https://twitter.com/intent/tweet?url=<?php echo $url; ?>&text=<?php echo $title; ?>" target="_blank" rel="noopener" class="bbm-share-btn bbm-share-btn--twitter" aria-label="Twitter'da paylaş">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        <a href="https://twitter.com/intent/tweet?text=<?php echo $text; ?>&url=<?php echo $url; ?>" target="_blank" rel="noopener" class="bbm-share-btn bbm-share-btn--twitter" aria-label="Twitter'da paylaş">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+            Twitter
         </a>
-        <a href="https://api.whatsapp.com/send?text=<?php echo $title . ' ' . $url; ?>" target="_blank" rel="noopener" class="bbm-share-btn bbm-share-btn--whatsapp" aria-label="WhatsApp'ta paylaş">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <a href="https://wa.me/?text=<?php echo $text . '%20' . $url; ?>" target="_blank" rel="noopener" class="bbm-share-btn bbm-share-btn--whatsapp" aria-label="WhatsApp'ta paylaş">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>
+            WhatsApp
         </a>
-        <button class="bbm-share-btn bbm-share-btn--copy" onclick="navigator.clipboard.writeText('<?php echo esc_js( get_permalink() ); ?>').then(()=>this.classList.add('copied'))" aria-label="Linki kopyala">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <button class="bbm-share-btn bbm-share-btn--copy" data-url="<?php echo esc_attr(get_permalink()); ?>" aria-label="Bağlantıyı kopyala">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <?php _e('Kopyala','bitebimuv-dernek'); ?>
         </button>
     </div>
     <?php
 }
 
-/**
- * Breadcrumb
- */
-function bbm_breadcrumb() {
+/* ── Breadcrumb ── */
+function bbm_breadcrumb(): void {
     if ( is_front_page() ) return;
-    ?>
-    <nav class="bbm-breadcrumb" aria-label="<?php esc_attr_e( 'Sayfa yolu', 'bitebimuv-dernek' ); ?>">
-        <ol class="bbm-breadcrumb__list">
-            <li class="bbm-breadcrumb__item">
-                <a href="<?php echo home_url(); ?>" class="bbm-breadcrumb__link"><?php _e( 'Anasayfa', 'bitebimuv-dernek' ); ?></a>
-            </li>
-            <?php if ( is_singular() ) : ?>
-            <li class="bbm-breadcrumb__item bbm-breadcrumb__item--current" aria-current="page"><?php the_title(); ?></li>
-            <?php elseif ( is_category() ) : ?>
-            <li class="bbm-breadcrumb__item bbm-breadcrumb__item--current"><?php single_cat_title(); ?></li>
-            <?php elseif ( is_tag() ) : ?>
-            <li class="bbm-breadcrumb__item bbm-breadcrumb__item--current"><?php single_tag_title(); ?></li>
-            <?php elseif ( is_search() ) : ?>
-            <li class="bbm-breadcrumb__item bbm-breadcrumb__item--current"><?php printf( __( 'Arama: "%s"', 'bitebimuv-dernek' ), get_search_query() ); ?></li>
-            <?php elseif ( is_archive() ) : ?>
-            <li class="bbm-breadcrumb__item bbm-breadcrumb__item--current"><?php the_archive_title(); ?></li>
-            <?php endif; ?>
-        </ol>
-    </nav>
-    <?php
+    $items   = [];
+    $items[] = '<li class="bbm-breadcrumb__item"><a href="' . home_url() . '">' . __('Ana Sayfa','bitebimuv-dernek') . '</a></li>';
+
+    if ( is_singular() ) {
+        if ( $cat = get_the_category() ) {
+            $items[] = '<li class="bbm-breadcrumb__item"><a href="' . esc_url(get_category_link($cat[0]->term_id)) . '">' . esc_html($cat[0]->name) . '</a></li>';
+        }
+        $items[] = '<li class="bbm-breadcrumb__item bbm-breadcrumb__item--current" aria-current="page">' . esc_html(get_the_title()) . '</li>';
+    } elseif ( is_post_type_archive() ) {
+        $items[] = '<li class="bbm-breadcrumb__item bbm-breadcrumb__item--current">' . esc_html(post_type_archive_title('',false)) . '</li>';
+    } elseif ( is_category() || is_tag() ) {
+        $items[] = '<li class="bbm-breadcrumb__item bbm-breadcrumb__item--current">' . single_cat_title('',false) . '</li>';
+    } elseif ( is_search() ) {
+        $items[] = '<li class="bbm-breadcrumb__item bbm-breadcrumb__item--current">' . sprintf(__('Arama: %s','bitebimuv-dernek'), get_search_query()) . '</li>';
+    } elseif ( is_404() ) {
+        $items[] = '<li class="bbm-breadcrumb__item bbm-breadcrumb__item--current">404</li>';
+    }
+
+    echo '<nav class="bbm-breadcrumb" aria-label="' . __('Bulunduğunuz yer','bitebimuv-dernek') . '"><ol class="bbm-breadcrumb__list">' . implode('<li class="bbm-breadcrumb__sep" aria-hidden="true">/</li>', $items) . '</ol></nav>';
 }

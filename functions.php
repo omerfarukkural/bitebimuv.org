@@ -1,254 +1,376 @@
 <?php
 /**
- * BiteBiMuv Dernek - Ana Fonksiyonlar
- *
- * @package bitebimuv-dernek
- * @version 2.0.0
+ * BiteBiMuv Dernek — functions.php v3.0
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
-    exit;
-}
-
-define( 'BBM_VERSION', '2.0.0' );
+define( 'BBM_VERSION', '3.0.0' );
 define( 'BBM_DIR', get_template_directory() );
 define( 'BBM_URI', get_template_directory_uri() );
 
-/**
- * Tema kurulumu
- */
-function bbm_setup() {
-    load_theme_textdomain( 'bitebimuv-dernek', BBM_DIR . '/languages' );
+require_once BBM_DIR . '/inc/custom-post-types.php';
+require_once BBM_DIR . '/inc/customizer.php';
+require_once BBM_DIR . '/inc/template-functions.php';
+require_once BBM_DIR . '/inc/template-tags.php';
+require_once BBM_DIR . '/inc/schema-org.php';
+require_once BBM_DIR . '/inc/kvkk.php';
 
+/* ── Theme Setup ── */
+function bbm_setup(): void {
     add_theme_support( 'automatic-feed-links' );
     add_theme_support( 'title-tag' );
     add_theme_support( 'post-thumbnails' );
-    add_theme_support( 'html5', [
-        'search-form', 'comment-form', 'comment-list',
-        'gallery', 'caption', 'style', 'script',
-    ] );
+    add_theme_support( 'html5', [ 'search-form','comment-form','comment-list','gallery','caption','style','script' ] );
+    add_theme_support( 'customize-selective-refresh-widgets' );
     add_theme_support( 'wp-block-styles' );
     add_theme_support( 'align-wide' );
-    add_theme_support( 'responsive-embeds' );
     add_theme_support( 'editor-styles' );
-    add_theme_support( 'appearance-tools' );
-    add_theme_support( 'custom-logo', [
-        'height'      => 80,
-        'width'       => 200,
-        'flex-height' => true,
-        'flex-width'  => true,
-    ] );
-    add_theme_support( 'customize-selective-refresh-widgets' );
+    add_theme_support( 'responsive-embeds' );
+    add_theme_support( 'woocommerce' );
 
-    add_image_size( 'bbm-hero',    1920, 900,  true );
-    add_image_size( 'bbm-card',    600,  420,  true );
-    add_image_size( 'bbm-member',  400,  400,  true );
-    add_image_size( 'bbm-gallery', 800,  600,  true );
-    add_image_size( 'bbm-thumb',   300,  200,  true );
+    add_image_size( 'bbm-hero',    1920, 800,  true );
+    add_image_size( 'bbm-card',     800, 500,  true );
+    add_image_size( 'bbm-member',   400, 400,  true );
+    add_image_size( 'bbm-gallery',  800, 600,  true );
+    add_image_size( 'bbm-thumb',    400, 300,  true );
+    add_image_size( 'bbm-square',   600, 600,  true );
+    add_image_size( 'bbm-wide',    1200, 400,  true );
+    add_image_size( 'bbm-portrait', 400, 600,  true );
 
     register_nav_menus( [
-        'primary' => __( 'Ana Menü',          'bitebimuv-dernek' ),
-        'footer'  => __( 'Alt Menü',          'bitebimuv-dernek' ),
-        'social'  => __( 'Sosyal Medya',      'bitebimuv-dernek' ),
+        'primary' => __( 'Ana Menü',         'bitebimuv-dernek' ),
+        'footer'  => __( 'Alt Bilgi Menüsü', 'bitebimuv-dernek' ),
+        'social'  => __( 'Sosyal Medya',     'bitebimuv-dernek' ),
+        'topbar'  => __( 'Üst Çubuk',        'bitebimuv-dernek' ),
     ] );
+
+    load_theme_textdomain( 'bitebimuv-dernek', BBM_DIR . '/languages' );
 }
 add_action( 'after_setup_theme', 'bbm_setup' );
 
-/**
- * İçerik genişliği
- */
-function bbm_content_width() {
-    $GLOBALS['content_width'] = apply_filters( 'bbm_content_width', 1200 );
-}
-add_action( 'after_setup_theme', 'bbm_content_width', 0 );
-
-/**
- * Script ve stilleri kaydet
- */
-function bbm_scripts() {
+/* ── Scripts & Styles ── */
+function bbm_scripts(): void {
     wp_enqueue_style(
-        'bbm-fonts',
-        'https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap',
-        [],
-        null
+        'bbm-google-fonts',
+        'https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap',
+        [], null
     );
 
-    wp_enqueue_style(
-        'bbm-style',
-        BBM_URI . '/assets/css/main.css',
-        [ 'bbm-fonts' ],
-        BBM_VERSION
-    );
+    wp_enqueue_style( 'bbm-main',       BBM_URI . '/assets/css/main.css',       [],           BBM_VERSION );
+    wp_enqueue_style( 'bbm-animations', BBM_URI . '/assets/css/animations.css', ['bbm-main'], BBM_VERSION );
+    wp_enqueue_style( 'bbm-dark-mode',  BBM_URI . '/assets/css/dark-mode.css',  ['bbm-main'], BBM_VERSION );
+    wp_enqueue_style( 'bbm-kvkk',       BBM_URI . '/assets/css/kvkk.css',       ['bbm-main'], BBM_VERSION );
 
-    wp_enqueue_style(
-        'bbm-animations',
-        BBM_URI . '/assets/css/animations.css',
-        [ 'bbm-style' ],
-        BBM_VERSION
-    );
+    if ( is_singular() && comments_open() ) wp_enqueue_script( 'comment-reply' );
 
-    wp_enqueue_script(
-        'bbm-smiley',
-        BBM_URI . '/assets/js/smiley.js',
-        [],
-        BBM_VERSION,
-        true
-    );
+    wp_enqueue_script( 'bbm-particles',   BBM_URI . '/assets/js/particles.js',   [],                              BBM_VERSION, true );
+    wp_enqueue_script( 'bbm-smiley',      BBM_URI . '/assets/js/smiley.js',      [],                              BBM_VERSION, true );
+    wp_enqueue_script( 'bbm-darkmode',    BBM_URI . '/assets/js/dark-mode.js',   [],                              BBM_VERSION, true );
+    wp_enqueue_script( 'bbm-kvkk-js',     BBM_URI . '/assets/js/kvkk.js',        [],                              BBM_VERSION, true );
+    wp_enqueue_script( 'bbm-livesearch',  BBM_URI . '/assets/js/live-search.js', [],                              BBM_VERSION, true );
+    wp_enqueue_script( 'bbm-main',        BBM_URI . '/assets/js/main.js',        ['bbm-smiley','bbm-particles'],  BBM_VERSION, true );
 
-    wp_enqueue_script(
-        'bbm-main',
-        BBM_URI . '/assets/js/main.js',
-        [ 'bbm-smiley' ],
-        BBM_VERSION,
-        true
-    );
-
-    wp_localize_script( 'bbm-main', 'bbmData', [
+    wp_localize_script( 'bbm-main', 'BBM', [
         'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
-        'nonce'    => wp_create_nonce( 'bbm_nonce' ),
-        'siteUrl'  => get_site_url(),
-        'themeUrl' => BBM_URI,
+        'nonce'    => wp_create_nonce( 'bbm-nonce' ),
+        'homeUrl'  => home_url(),
+        'themeUri' => BBM_URI,
+        'darkMode' => [ 'enabled' => bbm_dark_mode_is_enabled() ],
+        'kvkk'     => [ 'accepted' => bbm_kvkk_is_accepted() ],
         'i18n'     => [
-            'loading' => __( 'Yükleniyor...', 'bitebimuv-dernek' ),
-            'error'   => __( 'Bir hata oluştu.', 'bitebimuv-dernek' ),
-            'success' => __( 'Başarılı!', 'bitebimuv-dernek' ),
-            'send'    => __( 'Gönder', 'bitebimuv-dernek' ),
+            'sending'     => __( 'Gönderiliyor…',                       'bitebimuv-dernek' ),
+            'sent'        => __( 'Mesajınız iletildi! Teşekkürler 😊',  'bitebimuv-dernek' ),
+            'error'       => __( 'Hata oluştu, lütfen tekrar deneyin.', 'bitebimuv-dernek' ),
+            'copied'      => __( 'Bağlantı kopyalandı!',                'bitebimuv-dernek' ),
+            'searching'   => __( 'Aranıyor…',                           'bitebimuv-dernek' ),
+            'noResults'   => __( 'Sonuç bulunamadı.',                   'bitebimuv-dernek' ),
+            'registering' => __( 'Kaydediliyor…',                       'bitebimuv-dernek' ),
+            'registered'  => __( 'Kayıt tamamlandı! 🎉',                'bitebimuv-dernek' ),
+            'subscribing' => __( 'Abone olunuyor…',                     'bitebimuv-dernek' ),
+            'subscribed'  => __( 'Başarıyla abone oldunuz! 🎊',          'bitebimuv-dernek' ),
+            'applying'    => __( 'Başvurunuz gönderiliyor…',            'bitebimuv-dernek' ),
+            'applied'     => __( 'Başvurunuz alındı! 🤝',               'bitebimuv-dernek' ),
         ],
     ] );
-
-    if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
-        wp_enqueue_script( 'comment-reply' );
-    }
 }
 add_action( 'wp_enqueue_scripts', 'bbm_scripts' );
 
-/**
- * Widget alanlarını kaydet
- */
-function bbm_widgets_init() {
-    $args_sidebar = [
-        'before_widget' => '<section id="%1$s" class="widget %2$s">',
-        'after_widget'  => '</section>',
-        'before_title'  => '<h3 class="widget-title">',
-        'after_title'   => '</h3>',
+/* ── Widgets ── */
+function bbm_widgets_init(): void {
+    $sidebars = [
+        'sidebar-1'     => __( 'Ana Kenar Çubuğu', 'bitebimuv-dernek' ),
+        'footer-1'      => __( 'Alt Bilgi 1',       'bitebimuv-dernek' ),
+        'footer-2'      => __( 'Alt Bilgi 2',       'bitebimuv-dernek' ),
+        'footer-3'      => __( 'Alt Bilgi 3',       'bitebimuv-dernek' ),
+        'footer-4'      => __( 'Alt Bilgi 4',       'bitebimuv-dernek' ),
+        'topbar'        => __( 'Üst Çubuk',         'bitebimuv-dernek' ),
+        'before-footer' => __( 'Alt Bilgi Öncesi',  'bitebimuv-dernek' ),
     ];
-
-    register_sidebar( array_merge( $args_sidebar, [
-        'name'        => __( 'Kenar Çubuğu', 'bitebimuv-dernek' ),
-        'id'          => 'sidebar-1',
-        'description' => __( 'Blog kenar çubuğu.', 'bitebimuv-dernek' ),
-    ] ) );
-
-    $args_footer = [
-        'before_widget' => '<div id="%1$s" class="widget %2$s">',
-        'after_widget'  => '</div>',
-        'before_title'  => '<h4 class="widget-title footer-widget-title">',
-        'after_title'   => '</h4>',
-    ];
-
-    for ( $i = 1; $i <= 4; $i++ ) {
-        register_sidebar( array_merge( $args_footer, [
-            'name' => sprintf( __( 'Alt Bilgi %d', 'bitebimuv-dernek' ), $i ),
-            'id'   => 'footer-' . $i,
-        ] ) );
+    foreach ( $sidebars as $id => $name ) {
+        register_sidebar( [
+            'name'          => $name,
+            'id'            => $id,
+            'before_widget' => '<section id="%1$s" class="bbm-widget %2$s">',
+            'after_widget'  => '</section>',
+            'before_title'  => '<h3 class="bbm-widget-title"><span>',
+            'after_title'   => '</span></h3>',
+        ] );
     }
 }
 add_action( 'widgets_init', 'bbm_widgets_init' );
 
-/**
- * Excerpt uzunluğu
- */
-add_filter( 'excerpt_length', fn() => 30 );
-add_filter( 'excerpt_more', fn() => '...' );
-
-/**
- * Body class ekle
- */
-function bbm_body_classes( $classes ) {
-    if ( is_singular() ) {
-        $classes[] = 'is-singular';
-    }
-    if ( is_front_page() ) {
-        $classes[] = 'is-front-page';
-    }
+/* ── Body Classes ── */
+function bbm_body_classes( array $classes ): array {
+    if ( ! is_singular() )             $classes[] = 'hfeed';
+    if ( bbm_dark_mode_is_enabled() )  $classes[] = 'bbm-dark';
+    if ( is_front_page() )             $classes[] = 'is-front-page';
     return $classes;
 }
 add_filter( 'body_class', 'bbm_body_classes' );
 
-/**
- * AJAX iletişim formu handler
- */
-function bbm_handle_contact() {
-    check_ajax_referer( 'bbm_nonce', 'nonce' );
+/* ── Dark Mode helper ── */
+function bbm_dark_mode_is_enabled(): bool {
+    return isset( $_COOKIE['bbm_dark_mode'] ) && $_COOKIE['bbm_dark_mode'] === '1';
+}
 
-    $name    = sanitize_text_field( $_POST['name'] ?? '' );
-    $email   = sanitize_email( $_POST['email'] ?? '' );
+/* ── CSS tokens injected early ── */
+function bbm_customizer_inline_css(): void {
+    $p  = sanitize_hex_color( get_theme_mod( 'bbm_primary_color',   '#E8435A' ) ) ?: '#E8435A';
+    $s  = sanitize_hex_color( get_theme_mod( 'bbm_secondary_color', '#2D3561' ) ) ?: '#2D3561';
+    $a  = sanitize_hex_color( get_theme_mod( 'bbm_accent_color',    '#FFD93D' ) ) ?: '#FFD93D';
+    $dk = sanitize_hex_color( get_theme_mod( 'bbm_dark_color',      '#1A1A2E' ) ) ?: '#1A1A2E';
+    echo "<style id='bbm-tokens'>:root{--bbm-primary:{$p};--bbm-secondary:{$s};--bbm-accent:{$a};--bbm-dark:{$dk};}</style>\n";
+}
+add_action( 'wp_head', 'bbm_customizer_inline_css', 1 );
+
+/* ── AJAX: Contact ── */
+function bbm_handle_contact(): void {
+    check_ajax_referer( 'bbm-nonce', 'nonce' );
+    $name    = sanitize_text_field( $_POST['name']    ?? '' );
+    $email   = sanitize_email(      $_POST['email']   ?? '' );
+    $phone   = sanitize_text_field( $_POST['phone']   ?? '' );
     $subject = sanitize_text_field( $_POST['subject'] ?? '' );
     $message = sanitize_textarea_field( $_POST['message'] ?? '' );
-
-    if ( empty( $name ) || empty( $email ) || empty( $message ) ) {
-        wp_send_json_error( __( 'Lütfen tüm alanları doldurun.', 'bitebimuv-dernek' ) );
+    if ( ! $name || ! is_email( $email ) || ! $message ) {
+        wp_send_json_error( ['message' => __( 'Zorunlu alanları doğru doldurun.', 'bitebimuv-dernek' )] );
     }
-
-    if ( ! is_email( $email ) ) {
-        wp_send_json_error( __( 'Geçerli bir e-posta adresi girin.', 'bitebimuv-dernek' ) );
-    }
-
-    $admin_email = get_option( 'admin_email' );
-    $mail_subject = sprintf( '[BiteBiMuv] %s - %s', $subject ?: 'İletişim Formu', $name );
-    $mail_body = sprintf(
-        "Ad Soyad: %s\nE-posta: %s\n\nMesaj:\n%s",
-        $name, $email, $message
-    );
-
-    $headers = [
-        'Content-Type: text/plain; charset=UTF-8',
-        sprintf( 'Reply-To: %s <%s>', $name, $email ),
-    ];
-
-    $sent = wp_mail( $admin_email, $mail_subject, $mail_body, $headers );
-
-    if ( $sent ) {
-        wp_send_json_success( __( 'Mesajınız gönderildi. En kısa sürede size dönüş yapacağız!', 'bitebimuv-dernek' ) );
-    } else {
-        wp_send_json_error( __( 'Mesaj gönderilemedi. Lütfen daha sonra tekrar deneyin.', 'bitebimuv-dernek' ) );
-    }
+    $to      = get_theme_mod( 'bbm_contact_info_email', get_option( 'admin_email' ) );
+    $headers = [ 'Content-Type: text/html; charset=UTF-8', "Reply-To: {$name} <{$email}>" ];
+    $sent    = wp_mail( $to, "[BiteBiMuv] " . ( $subject ?: 'İletişim Formu' ),
+        bbm_build_email( [ 'title' => 'Yeni İletişim Mesajı', 'fields' => [
+            'Ad Soyad' => esc_html($name), 'E-posta' => esc_html($email),
+            'Telefon'  => esc_html($phone), 'Konu'   => esc_html($subject),
+            'Mesaj'    => nl2br( esc_html($message) ),
+        ] ] ), $headers );
+    $sent
+        ? wp_send_json_success( ['message' => __( 'Mesajınız iletildi! En kısa sürede dönüş yapacağız.', 'bitebimuv-dernek' )] )
+        : wp_send_json_error(   ['message' => __( 'Mesaj gönderilemedi, tekrar deneyin.', 'bitebimuv-dernek' )] );
 }
-add_action( 'wp_ajax_bbm_contact', 'bbm_handle_contact' );
+add_action( 'wp_ajax_bbm_contact',        'bbm_handle_contact' );
 add_action( 'wp_ajax_nopriv_bbm_contact', 'bbm_handle_contact' );
 
-/**
- * Etkinlik kaydı AJAX handler
- */
-function bbm_handle_event_register() {
-    check_ajax_referer( 'bbm_nonce', 'nonce' );
-
+/* ── AJAX: Event Register ── */
+function bbm_handle_event_register(): void {
+    check_ajax_referer( 'bbm-nonce', 'nonce' );
     $event_id = absint( $_POST['event_id'] ?? 0 );
-    $name     = sanitize_text_field( $_POST['name'] ?? '' );
-    $email    = sanitize_email( $_POST['email'] ?? '' );
+    $name     = sanitize_text_field( $_POST['name']  ?? '' );
+    $email    = sanitize_email(      $_POST['email'] ?? '' );
     $phone    = sanitize_text_field( $_POST['phone'] ?? '' );
-
-    if ( ! $event_id || empty( $name ) || empty( $email ) ) {
-        wp_send_json_error( __( 'Gerekli alanları doldurun.', 'bitebimuv-dernek' ) );
+    $count    = min( 10, max( 1, absint( $_POST['count'] ?? 1 ) ) );
+    $note     = sanitize_textarea_field( $_POST['note'] ?? '' );
+    if ( ! $event_id || ! $name || ! is_email($email) ) {
+        wp_send_json_error( ['message' => __( 'Zorunlu alanları doldurun.', 'bitebimuv-dernek' )] );
     }
-
-    $event_title = get_the_title( $event_id );
-    $admin_email = get_option( 'admin_email' );
-    $subject     = sprintf( '[BiteBiMuv Etkinlik] %s - Yeni Kayıt', $event_title );
-    $body        = sprintf( "Etkinlik: %s\nAd: %s\nE-posta: %s\nTelefon: %s", $event_title, $name, $email, $phone );
-
-    wp_mail( $admin_email, $subject, $body );
-    wp_mail( $email, sprintf( 'Etkinlik Kaydınız: %s', $event_title ),
-        sprintf( 'Merhaba %s,\n\n"%s" etkinliğine kaydınız alınmıştır.\n\nGörüşmek üzere!\nBiteBiMuv Derneği', $name, $event_title )
-    );
-
-    wp_send_json_success( __( 'Etkinliğe başarıyla kaydoldunuz!', 'bitebimuv-dernek' ) );
+    $event = get_post( $event_id );
+    if ( ! $event || $event->post_type !== 'bbm_event' ) {
+        wp_send_json_error( ['message' => __( 'Etkinlik bulunamadı.', 'bitebimuv-dernek' )] );
+    }
+    $regs   = (array) get_post_meta( $event_id, '_bbm_registrations', true );
+    $regs[] = compact( 'name','email','phone','count','note' ) + ['date' => current_time('mysql')];
+    update_post_meta( $event_id, '_bbm_registrations', $regs );
+    $headers = ['Content-Type: text/html; charset=UTF-8'];
+    wp_mail( $email, sprintf( __( 'Etkinlik Kaydı: %s', 'bitebimuv-dernek' ), $event->post_title ),
+        bbm_build_email( [ 'title' => 'Kaydınız Alındı! 🎉',
+            'intro'   => sprintf( __( 'Merhaba %s,', 'bitebimuv-dernek' ), $name ),
+            'message' => __( 'Etkinliğe kaydınız başarıyla tamamlandı. Görüşmek üzere!', 'bitebimuv-dernek' ),
+            'fields'  => [ 'Etkinlik' => esc_html($event->post_title), 'Katılımcı' => $count,
+                'Tarih' => bbm_get_event_date_formatted($event_id) ],
+        ] ), $headers );
+    wp_send_json_success( ['message' => __( 'Kaydınız tamamlandı! Onay e-postası gönderildi. 🎊', 'bitebimuv-dernek' )] );
 }
-add_action( 'wp_ajax_bbm_event_register', 'bbm_handle_event_register' );
+add_action( 'wp_ajax_bbm_event_register',        'bbm_handle_event_register' );
 add_action( 'wp_ajax_nopriv_bbm_event_register', 'bbm_handle_event_register' );
 
-// Yardımcı dosyaları dahil et
-require BBM_DIR . '/inc/custom-post-types.php';
-require BBM_DIR . '/inc/customizer.php';
-require BBM_DIR . '/inc/template-functions.php';
-require BBM_DIR . '/inc/template-tags.php';
+/* ── AJAX: Newsletter ── */
+function bbm_handle_newsletter(): void {
+    check_ajax_referer( 'bbm-nonce', 'nonce' );
+    $email = sanitize_email( $_POST['email'] ?? '' );
+    $name  = sanitize_text_field( $_POST['name'] ?? '' );
+    if ( ! is_email( $email ) ) {
+        wp_send_json_error( ['message' => __( 'Geçerli bir e-posta adresi girin.', 'bitebimuv-dernek' )] );
+    }
+    $subs = (array) get_option( 'bbm_newsletter_subscribers', [] );
+    if ( in_array( $email, array_column( $subs, 'email' ), true ) ) {
+        wp_send_json_error( ['message' => __( 'Bu e-posta adresi zaten kayıtlı.', 'bitebimuv-dernek' )] );
+    }
+    $subs[] = [ 'email' => $email, 'name' => $name, 'date' => current_time('mysql') ];
+    update_option( 'bbm_newsletter_subscribers', $subs );
+    wp_mail( $email, __( 'BiteBiMuv Bültenine Hoş Geldiniz!', 'bitebimuv-dernek' ),
+        bbm_build_email( [ 'title' => '🎉 Bültene Hoş Geldiniz!',
+            'intro'   => $name ? sprintf( __( 'Merhaba %s,', 'bitebimuv-dernek' ), $name ) : __( 'Merhaba,', 'bitebimuv-dernek' ),
+            'message' => __( 'BiteBiMuv bültenine başarıyla abone oldunuz. En güncel haberler ve etkinlikler için takipte kalın!', 'bitebimuv-dernek' ),
+        ] ), ['Content-Type: text/html; charset=UTF-8'] );
+    wp_send_json_success( ['message' => __( 'Bültene başarıyla abone oldunuz! 🎊', 'bitebimuv-dernek' )] );
+}
+add_action( 'wp_ajax_bbm_newsletter',        'bbm_handle_newsletter' );
+add_action( 'wp_ajax_nopriv_bbm_newsletter', 'bbm_handle_newsletter' );
+
+/* ── AJAX: Membership Application ── */
+function bbm_handle_membership(): void {
+    check_ajax_referer( 'bbm-nonce', 'nonce' );
+    $data = [
+        'name'       => sanitize_text_field( $_POST['name']           ?? '' ),
+        'surname'    => sanitize_text_field( $_POST['surname']         ?? '' ),
+        'email'      => sanitize_email(      $_POST['email']           ?? '' ),
+        'phone'      => sanitize_text_field( $_POST['phone']           ?? '' ),
+        'birthdate'  => sanitize_text_field( $_POST['birthdate']       ?? '' ),
+        'profession' => sanitize_text_field( $_POST['profession']      ?? '' ),
+        'city'       => sanitize_text_field( $_POST['city']            ?? '' ),
+        'address'    => sanitize_textarea_field( $_POST['address']     ?? '' ),
+        'motivation' => sanitize_textarea_field( $_POST['motivation']  ?? '' ),
+        'type'       => sanitize_text_field( $_POST['membership_type'] ?? 'standard' ),
+        'kvkk'       => ! empty( $_POST['kvkk'] ),
+    ];
+    if ( ! $data['name'] || ! is_email($data['email']) || ! $data['phone'] ) {
+        wp_send_json_error( ['message' => __( 'Zorunlu alanları doldurun.', 'bitebimuv-dernek' )] );
+    }
+    if ( ! $data['kvkk'] ) {
+        wp_send_json_error( ['message' => __( 'KVKK metnini onaylamanız gerekiyor.', 'bitebimuv-dernek' )] );
+    }
+    $post_id = wp_insert_post( [
+        'post_type'  => 'bbm_member_application',
+        'post_title' => "{$data['name']} {$data['surname']} — " . current_time('Y-m-d H:i'),
+        'post_status'=> 'pending',
+        'meta_input' => $data,
+    ] );
+    if ( is_wp_error( $post_id ) ) {
+        wp_send_json_error( ['message' => __( 'Başvuru kaydedilemedi.', 'bitebimuv-dernek' )] );
+    }
+    wp_mail( get_option('admin_email'), '[BiteBiMuv] Yeni Üyelik Başvurusu',
+        bbm_build_email( [ 'title' => 'Yeni Üyelik Başvurusu 🤝', 'fields' => [
+            'Ad Soyad'    => "{$data['name']} {$data['surname']}",
+            'E-posta'     => $data['email'], 'Telefon'  => $data['phone'],
+            'Meslek'      => $data['profession'], 'Şehir' => $data['city'],
+            'Üyelik Tipi' => $data['type'],
+            'Motivasyon'  => nl2br( esc_html( $data['motivation'] ) ),
+        ] ] ), ['Content-Type: text/html; charset=UTF-8'] );
+    wp_send_json_success( ['message' => __( 'Başvurunuz alındı! En kısa sürede dönüş yapacağız. 🎉', 'bitebimuv-dernek' )] );
+}
+add_action( 'wp_ajax_bbm_membership',        'bbm_handle_membership' );
+add_action( 'wp_ajax_nopriv_bbm_membership', 'bbm_handle_membership' );
+
+/* ── AJAX: Live Search ── */
+function bbm_handle_live_search(): void {
+    check_ajax_referer( 'bbm-nonce', 'nonce' );
+    $term = sanitize_text_field( $_POST['term'] ?? '' );
+    if ( mb_strlen( $term ) < 2 ) { wp_send_json_success( [] ); }
+    $query = new WP_Query( [
+        's'              => $term,
+        'posts_per_page' => 6,
+        'post_type'      => ['post','page','bbm_event','bbm_announcement','bbm_project','bbm_gallery'],
+        'post_status'    => 'publish',
+    ] );
+    $labels  = [ 'post'=>'Haber','page'=>'Sayfa','bbm_event'=>'Etkinlik','bbm_announcement'=>'Duyuru','bbm_project'=>'Proje','bbm_gallery'=>'Galeri' ];
+    $results = [];
+    foreach ( $query->posts as $post ) {
+        $results[] = [
+            'id'      => $post->ID,
+            'title'   => get_the_title($post),
+            'excerpt' => wp_trim_words( strip_tags($post->post_content), 12 ),
+            'url'     => get_permalink($post),
+            'thumb'   => get_the_post_thumbnail_url( $post->ID, 'bbm-thumb' ) ?: '',
+            'type'    => $labels[$post->post_type] ?? $post->post_type,
+            'date'    => get_the_date( 'd.m.Y', $post ),
+        ];
+    }
+    wp_send_json_success( $results );
+}
+add_action( 'wp_ajax_bbm_live_search',        'bbm_handle_live_search' );
+add_action( 'wp_ajax_nopriv_bbm_live_search', 'bbm_handle_live_search' );
+
+/* ── HTML Email Builder ── */
+function bbm_build_email( array $args ): string {
+    $primary = get_theme_mod( 'bbm_primary_color', '#E8435A' );
+    $sec     = get_theme_mod( 'bbm_secondary_color', '#2D3561' );
+    $title   = $args['title']   ?? '';
+    $intro   = $args['intro']   ?? '';
+    $msg     = $args['message'] ?? '';
+    $fields  = $args['fields']  ?? [];
+    $rows    = '';
+    foreach ( $fields as $label => $value ) {
+        $rows .= "<tr><td style='padding:10px 16px;font-weight:700;color:{$sec};width:38%;border-bottom:1px solid #eee;font-size:13px;'>{$label}</td>"
+               . "<td style='padding:10px 16px;color:#444;border-bottom:1px solid #eee;font-size:14px;'>{$value}</td></tr>";
+    }
+    $table = $rows ? "<table style='width:100%;border-collapse:collapse;margin:24px 0;background:#fafafa;border-radius:12px;overflow:hidden;border:1px solid #eee;'>{$rows}</table>" : '';
+    $site  = get_bloginfo('name');
+    $url   = home_url();
+    $logo  = get_site_icon_url(64);
+    $year  = date('Y');
+    return "<!DOCTYPE html><html lang='tr'><head><meta charset='UTF-8'></head><body style='margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:#f0f4f8;'>
+<div style='max-width:600px;margin:40px auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.1);'>
+  <div style='background:linear-gradient(135deg,{$primary} 0%,{$sec} 100%);padding:48px 40px;text-align:center;'>"
+    . ( $logo ? "<img src='{$logo}' width='64' height='64' style='border-radius:50%;margin-bottom:20px;border:3px solid rgba(255,255,255,.3);'>" : '' ) .
+    "<h1 style='color:#fff;margin:0;font-size:26px;font-weight:800;letter-spacing:-.5px;'>{$title}</h1></div>
+  <div style='padding:40px;'>"
+    . ( $intro ? "<p style='font-size:17px;color:#333;margin:0 0 8px;font-weight:600;'>{$intro}</p>" : '' )
+    . ( $msg   ? "<p style='font-size:15px;color:#555;line-height:1.7;margin:0 0 16px;'>{$msg}</p>"  : '' ) .
+    "{$table}</div>
+  <div style='background:#f8fafc;padding:28px 40px;text-align:center;border-top:1px solid #e8ecf0;'>
+    <p style='margin:0;font-size:13px;color:#94a3b8;'><a href='{$url}' style='color:{$primary};text-decoration:none;font-weight:700;'>{$site}</a> &middot; &copy; {$year}</p>
+  </div>
+</div></body></html>";
+}
+
+/* ── Member Application CPT (admin only) ── */
+function bbm_register_application_cpt(): void {
+    register_post_type( 'bbm_member_application', [
+        'labels'  => [
+            'name'          => __( 'Üyelik Başvuruları', 'bitebimuv-dernek' ),
+            'singular_name' => __( 'Üyelik Başvurusu',  'bitebimuv-dernek' ),
+            'all_items'     => __( 'Tüm Başvurular',    'bitebimuv-dernek' ),
+        ],
+        'public'       => false,
+        'show_ui'      => true,
+        'show_in_menu' => true,
+        'menu_icon'    => 'dashicons-groups',
+        'supports'     => ['title'],
+        'capabilities' => ['create_posts' => 'do_not_allow'],
+        'map_meta_cap' => true,
+    ] );
+}
+add_action( 'init', 'bbm_register_application_cpt' );
+
+/* ── Application admin columns ── */
+add_filter( 'manage_bbm_member_application_posts_columns', function( $cols ) {
+    return [
+        'cb'   => $cols['cb'],
+        'title'=> __('Ad Soyad','bitebimuv-dernek'),
+        'email'=> __('E-posta','bitebimuv-dernek'),
+        'type' => __('Üyelik Tipi','bitebimuv-dernek'),
+        'city' => __('Şehir','bitebimuv-dernek'),
+        'date' => __('Tarih','bitebimuv-dernek'),
+    ];
+} );
+add_action( 'manage_bbm_member_application_posts_custom_column', function( $col, $post_id ) {
+    if ( $col === 'email' ) echo esc_html( get_post_meta($post_id,'email',true) );
+    if ( $col === 'type'  ) echo esc_html( get_post_meta($post_id,'type', true) );
+    if ( $col === 'city'  ) echo esc_html( get_post_meta($post_id,'city', true) );
+}, 10, 2 );
+
+/* ── Utilities ── */
+add_filter( 'excerpt_length', fn() => 22 );
+add_filter( 'excerpt_more',   fn() => '&hellip;' );
+
+function bbm_reading_time( int $post_id = 0 ): string {
+    $words = str_word_count( strip_tags( get_post_field( 'post_content', $post_id ?: get_the_ID() ) ) );
+    return max(1, (int) round( $words / 200 ) ) . ' dk okuma';
+}
