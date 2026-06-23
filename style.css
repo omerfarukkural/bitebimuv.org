@@ -1,15 +1,16 @@
 /*
-Theme Name: BiteBiMuv Dernek
-Theme URI: https://bitebimuv.org
-Author: BiteBiMuv Derneği
-Author URI: https://bitebimuv.org
-Description: BiteBiMuv Derneği için kapsamlı, modern ve interaktif WordPress teması. Kaydırmaya duyarlı gülümseyen yüz maskotu, etkinlik yönetimi, üye yönetimi ve zengin özelleştirme seçenekleri içerir. Tam duyarlı tasarım, blok editörü desteği ve Türkçe tam dil desteğiyle gelir.
-Version: 2.0.0
-Requires at least: 6.0
-Tested up to: 6.7
-Requires PHP: 8.1
-License: GPL-2.0-or-later
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
-Text Domain: bitebimuv-dernek
-Tags: association, nonprofit, community, animated, responsive, modern, custom-colors, custom-menu, featured-images, footer-widgets, translation-ready, full-width-template
+Theme Name:         BiteBiMuv Dernek
+Theme URI:          https://bitebimuv.org
+Author:             BiteBiMuv Geliştirme Ekibi
+Author URI:         https://bitebimuv.org
+Description:        Gelişmiş özelliklerle donatılmış, tümüyle özelleştirilebilir dernek websitesi teması. İnteraktif smiley, karanlık mod, KVKK uyumu, PWA desteği, takvim görünümü, Leaflet harita, iyzico ödeme entegrasyonu, Netgsm SMS, gelişmiş SEO, kapsamlı gönüllü & destekci yönetimi ve çok daha fazlası.
+Version:            4.0.0
+Requires at least:  6.2
+Tested up to:       6.7
+Requires PHP:       8.1
+License:            GNU General Public License v2 or later
+License URI:        https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain:        bitebimuv-dernek
+Domain Path:        /languages
+Tags:               custom-colors, custom-logo, custom-menu, featured-images, full-width-template, theme-options, two-columns, right-sidebar, left-sidebar, e-commerce, blog, news, portfolio, translation-ready, rtl-language-support, footer-widgets, sticky-post, threaded-comments, editor-style, wide-blocks, block-styles, accessibility-ready, association, dernek, pwa, dark-mode, turkish
 */
