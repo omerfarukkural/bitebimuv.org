@@ -1,0 +1,29 @@
+name: Deploy bitebimuv.org Theme (cPanel)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'theme/**'
+      - '.github/workflows/deploy-theme.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy WordPress Theme via SSH/SFTP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via SFTP to Turhost cPanel
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.TURHOST_FTP_HOST }}
+          username: ${{ secrets.TURHOST_FTP_USER }}
+          password: ${{ secrets.TURHOST_FTP_PASSWORD }}
+          local-dir: ./theme/
+          server-dir: /public_html/wp-content/themes/bitebimuv/
+          protocol: ftps
+          port: 21
