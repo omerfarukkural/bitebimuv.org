@@ -1,0 +1,308 @@
+name: Deploy to bitebimuv.org
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy ortamı'
+        required: true
+        default: 'production'
+        type: choice
+        options: [ production, staging ]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── JOB 1: Lint & Validate ─────────────────────────────────────────────────
+  lint:
+    name: PHP Lint & Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: php-cs-fixer
+
+      - name: PHP Syntax Check
+        run: |
+          find . -name "*.php" -not -path "./.git/*" | while read file; do
+            php -l "$file" || exit 1
+          done
+          echo "✅ Tüm PHP dosyaları geçerli sözdizimi"
+
+      - name: Validate theme structure
+        run: |
+          echo "Tema yapısı doğrulanıyor..."
+          required_files=("style.css" "functions.php" "index.php" "header.php" "footer.php")
+          for f in "${required_files[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "❌ Zorunlu dosya eksik: $f"
+              exit 1
+            fi
+          done
+          echo "✅ Tema yapısı doğrulandı"
+
+      - name: Check theme headers
+        run: |
+          if ! grep -q "Theme Name:" style.css; then
+            echo "❌ style.css'de Theme Name başlığı bulunamadı"
+            exit 1
+          fi
+          echo "✅ Tema başlıkları geçerli"
+
+  # ─── JOB 2: Build & Optimize ────────────────────────────────────────────────
+  build:
+    name: Build & Optimize Assets
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies (if package.json exists)
+        run: |
+          if [ -f "package.json" ]; then
+            npm ci --prefer-offline
+          else
+            echo "package.json bulunamadı, build adımı atlanıyor"
+          fi
+
+      - name: Verify CSS files
+        run: |
+          css_count=$(find assets/css -name "*.css" | wc -l)
+          echo "✅ $css_count CSS dosyası bulundu"
+          ls -lh assets/css/
+
+      - name: Verify JS files
+        run: |
+          js_count=$(find assets/js -name "*.js" | wc -l)
+          echo "✅ $js_count JS dosyası bulundu"
+          ls -lh assets/js/
+
+      - name: Create deployment package
+        run: |
+          mkdir -p /tmp/theme-package
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='*.log' \
+            --exclude='.env*' \
+            --exclude='tests' \
+            --exclude='*.test.js' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='*.md' \
+            . /tmp/theme-package/
+          echo "📦 Paket oluşturuldu"
+          du -sh /tmp/theme-package
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: theme-package-${{ github.sha }}
+          path: /tmp/theme-package
+          retention-days: 3
+
+  # ─── JOB 3: Deploy ──────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://bitebimuv.org
+    steps:
+      - name: Download deployment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: theme-package-${{ github.sha }}
+          path: /tmp/theme-package
+
+      - name: Setup SSH
+        if: ${{ env.SFTP_HOST != '' }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.SFTP_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName ${{ secrets.SFTP_HOST }}
+            User ${{ secrets.SFTP_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking accept-new
+            ConnectTimeout 30
+          EOF
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+
+      - name: Deploy via SFTP (SSH key)
+        if: ${{ env.SFTP_HOST != '' && env.SSH_PRIVATE_KEY != '' }}
+        run: |
+          echo "🚀 SFTP ile deploy ediliyor: ${{ secrets.SFTP_HOST }}"
+          
+          REMOTE_PATH="${{ secrets.SFTP_REMOTE_PATH }}"
+          THEME_DIR="${REMOTE_PATH:-/public_html/wp-content/themes/bitebimuv}"
+          
+          rsync -avz \
+            --delete \
+            --timeout=60 \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new" \
+            /tmp/theme-package/ \
+            "${{ secrets.SFTP_USER }}@${{ secrets.SFTP_HOST }}:${THEME_DIR}/"
+          
+          echo "✅ Dosyalar aktarıldı: ${THEME_DIR}"
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: WordPress cache temizle (WP-CLI)
+        if: ${{ env.SFTP_HOST != '' && env.SSH_PRIVATE_KEY != '' }}
+        run: |
+          ssh deploy-target "
+            if command -v wp &>/dev/null; then
+              WP_PATH=\$(find /public_html -name 'wp-config.php' -maxdepth 3 | head -1 | xargs dirname 2>/dev/null || echo '/public_html')
+              cd \"\$WP_PATH\" && wp cache flush --allow-root 2>/dev/null || true
+              wp rewrite flush --allow-root 2>/dev/null || true
+              echo '✅ WordPress önbelleği temizlendi'
+            else
+              echo 'ℹ️ WP-CLI bulunamadı, önbellek temizleme atlandı'
+            fi
+          " || echo "⚠️ SSH bağlantısı başarısız, önbellek temizleme atlandı"
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Fallback SFTP deploy (password)
+        if: ${{ env.SFTP_HOST != '' && env.SFTP_PASSWORD != '' && env.SSH_PRIVATE_KEY == '' }}
+        run: |
+          echo "🔐 SFTP şifreli deploy başlatılıyor..."
+          sudo apt-get install -y sshpass lftp 2>/dev/null
+          
+          REMOTE_PATH="${{ secrets.SFTP_REMOTE_PATH }}"
+          THEME_DIR="${REMOTE_PATH:-/public_html/wp-content/themes/bitebimuv}"
+          
+          lftp -u "${{ secrets.SFTP_USER }},${{ secrets.SFTP_PASSWORD }}" \
+            -e "set ftp:ssl-allow false; set net:timeout 30; mirror --reverse --delete --verbose /tmp/theme-package/ ${THEME_DIR}/; bye" \
+            "${{ secrets.SFTP_HOST }}" || exit 1
+          
+          echo "✅ SFTP deploy tamamlandı"
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Health check
+        run: |
+          echo "🔍 Site sağlık kontrolü yapılıyor..."
+          
+          for i in 1 2 3; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 15 \
+              --user-agent "BBM-Deploy-Check/1.0" \
+              "https://bitebimuv.org" 2>/dev/null || echo "000")
+            
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ] || [ "$STATUS" = "302" ]; then
+              echo "✅ Site yanıt veriyor (HTTP $STATUS)"
+              break
+            else
+              echo "⚠️ Deneme $i/3: HTTP $STATUS - 10 saniye bekleniyor..."
+              sleep 10
+            fi
+          done
+          
+          echo "Kontrol URL: https://bitebimuv.org"
+
+  # ─── JOB 4: Verify ──────────────────────────────────────────────────────────
+  verify:
+    name: Deployment Verification
+    runs-on: ubuntu-latest
+    needs: deploy
+    timeout-minutes: 5
+    if: always()
+    steps:
+      - name: Deployment summary
+        run: |
+          echo "## 🚀 Deployment Özeti" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Bilgi | Değer |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Site** | https://bitebimuv.org |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tetikleyen** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Zaman** | $(date -u '+%Y-%m-%d %H:%M UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "### ✅ Deploy Başarılı" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Deploy Başarısız" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Secrets yapılandırıldı mı? Kontrol edin:" >> $GITHUB_STEP_SUMMARY
+            echo "- \`SFTP_HOST\` - FTP/SSH sunucu adresi" >> $GITHUB_STEP_SUMMARY
+            echo "- \`SFTP_USER\` - FTP/SSH kullanıcı adı" >> $GITHUB_STEP_SUMMARY
+            echo "- \`SSH_PRIVATE_KEY\` veya \`SFTP_PASSWORD\` - Kimlik doğrulama" >> $GITHUB_STEP_SUMMARY
+            echo "- \`SFTP_REMOTE_PATH\` - Tema dizini yolu (opsiyonel)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ─── JOB 5: Notify ──────────────────────────────────────────────────────────
+  notify:
+    name: Bildirim Gönder
+    runs-on: ubuntu-latest
+    needs: [ deploy, verify ]
+    if: always()
+    steps:
+      - name: Slack notification (başarılı)
+        if: needs.deploy.result == 'success' && env.SLACK_WEBHOOK != ''
+        run: |
+          curl -s -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"✅ *bitebimuv.org* başarıyla güncellendi!\",
+              \"blocks\": [{
+                \"type\": \"section\",
+                \"text\": {
+                  \"type\": \"mrkdwn\",
+                  \"text\": \"✅ *bitebimuv.org* deploy tamamlandı\\n*Branch:* \`${{ github.ref_name }}\`\\n*Commit:* \`${{ github.sha }}\`\\n*Yapan:* ${{ github.actor }}\\n*Site:* https://bitebimuv.org\"
+                }
+              }]
+            }" || echo "Slack bildirimi gönderilemedi"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Slack notification (başarısız)
+        if: needs.deploy.result == 'failure' && env.SLACK_WEBHOOK != ''
+        run: |
+          curl -s -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"❌ *bitebimuv.org* deploy BAŞARISIZ!\",
+              \"blocks\": [{
+                \"type\": \"section\",
+                \"text\": {
+                  \"type\": \"mrkdwn\",
+                  \"text\": \"❌ *bitebimuv.org* deploy başarısız oldu\\n*Branch:* \`${{ github.ref_name }}\`\\n*Yapan:* ${{ github.actor }}\\n*Kontrol:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+                }
+              }]
+            }" || echo "Slack bildirimi gönderilemedi"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
