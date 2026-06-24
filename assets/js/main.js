@@ -82,11 +82,13 @@
     if (!panel || !toggle) return;
     var open = function() {
       panel.classList.add('is-open');
+      panel.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
       if (input) setTimeout(function() { input.focus(); }, 200);
     };
     var closePanel = function() {
       panel.classList.remove('is-open');
+      panel.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
     };
     toggle.addEventListener('click', open);
@@ -129,8 +131,8 @@
   }
 
   function animateCounter(el) {
-    var raw     = el.dataset.target.replace(/[^0-9.]/g, '');
-    var suffix  = el.dataset.target.replace(/[0-9.]/g, '');
+    var raw     = el.dataset.target;
+    var suffix  = (el.dataset.suffix || '') + (el.dataset.unit || '');
     var target  = parseFloat(raw) || 0;
     var isFloat = raw.includes('.');
     var dur     = 1800;
@@ -142,7 +144,7 @@
       var val  = target * ease(prog);
       el.textContent = (isFloat ? val.toFixed(1) : Math.floor(val)) + suffix;
       if (prog < 1) requestAnimationFrame(step);
-      else { el.textContent = el.dataset.target; el.classList.add('is-counting'); }
+      else { el.textContent = target + suffix; el.classList.add('is-counting'); }
     });
   }
 

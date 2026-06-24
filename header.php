@@ -70,6 +70,9 @@ if ( $topbar_enabled && $topbar_text ) :
                 </a>
                 <?php endforeach; ?>
             </div>
+            <button class="bbm-topbar__close" aria-label="<?php esc_attr_e( 'Çubuğu kapat', 'bitebimuv-dernek' ); ?>">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
         </div>
     </div>
 </div>
@@ -125,11 +128,11 @@ if ( $topbar_enabled && $topbar_text ) :
             <button class="bbm-header__icon-btn bbm-darkmode-toggle" id="bbm-darkmode-toggle"
                     aria-label="<?php esc_attr_e( 'Karanlık moda geç', 'bitebimuv-dernek' ); ?>"
                     title="<?php esc_attr_e( 'Tema değiştir', 'bitebimuv-dernek' ); ?>">
-                <svg class="bbm-dm-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true">
+                <svg class="bbm-darkmode-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true">
                     <circle cx="12" cy="12" r="5"/>
                     <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
                 </svg>
-                <svg class="bbm-dm-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true">
+                <svg class="bbm-darkmode-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                 </svg>
             </button>
@@ -153,8 +156,8 @@ if ( $topbar_enabled && $topbar_text ) :
     </div><!-- .bbm-header__inner -->
 
     <!-- Gelişmiş canlı arama paneli -->
-    <div class="bbm-search-panel" id="bbm-search-panel" hidden aria-modal="true" role="dialog"
-         aria-label="<?php esc_attr_e( 'Arama', 'bitebimuv-dernek' ); ?>">
+    <div class="bbm-search-panel" id="bbm-search-panel" role="dialog" aria-modal="true"
+         aria-label="<?php esc_attr_e( 'Arama', 'bitebimuv-dernek' ); ?>" aria-hidden="true">
         <div class="bbm-search-panel__backdrop" id="bbm-search-backdrop"></div>
         <div class="bbm-search-panel__inner">
             <div class="bbm-search-panel__box">

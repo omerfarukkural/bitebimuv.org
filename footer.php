@@ -116,7 +116,7 @@ $newsletter_title = get_theme_mod( 'bbm_newsletter_title', __( 'Bültenimize Abo
                         <li class="bbm-footer__event-item">
                             <a href="<?php the_permalink(); ?>" class="bbm-footer__event-link">
                                 <span class="bbm-footer__event-date">
-                                    <?php echo $ev_date ? esc_html( bbm_get_event_date_formatted( $ev_date, 'short' ) ) : ''; ?>
+                                    <?php echo $ev_date ? esc_html( bbm_get_event_date_formatted( get_the_ID(), 'short' ) ) : ''; ?>
                                 </span>
                                 <span class="bbm-footer__event-name"><?php the_title(); ?></span>
                             </a>
