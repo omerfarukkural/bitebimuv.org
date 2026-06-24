@@ -1,0 +1,28 @@
+name: Deploy n8n to GCP VM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/n8n/**'
+      - 'infra/nginx/n8n.conf'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GCP VM via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 34.141.16.229
+          username: ${{ secrets.GCP_SSH_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/n8n
+            git fetch origin main
+            git reset --hard origin/main
+            cd infra/n8n
+            docker compose pull n8n
+            docker compose up -d n8n
+            echo "n8n deploy tamamlandı: $(date)"
