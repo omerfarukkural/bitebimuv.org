@@ -138,8 +138,8 @@ function bbm_get_event_date_formatted( int $post_id = 0, string $format = 'full'
     };
 }
 
-/* ── Social Links SVG ── */
-function bbm_get_social_links( string $class = 'bbm-social-links' ): string {
+/* ── Social Links — raw data array ── */
+function bbm_get_social_links(): array {
     $icons = [
         'facebook'  => ['Facebook',  'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z'],
         'instagram' => ['Instagram', 'M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37M17.5 6.5h.01M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z'],
@@ -151,46 +151,52 @@ function bbm_get_social_links( string $class = 'bbm-social-links' ): string {
         'tiktok'    => ['TikTok',    'M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.5V6.73a4.85 4.85 0 0 1-1.01-.04'],
     ];
 
-    $html  = "<div class=\"{$class}\">";
-    $found = false;
+    $fill_platforms   = ['facebook','instagram','youtube','whatsapp','telegram','tiktok'];
+    $stroke_platforms = ['twitter','linkedin'];
+    $result = [];
+
     foreach ( $icons as $platform => [$label, $path] ) {
         $url = get_theme_mod( "bbm_social_{$platform}", '' );
         if ( ! $url ) continue;
-        $found = true;
-        $is_whatsapp = $platform === 'whatsapp';
-        if ( $is_whatsapp ) $url = 'https://wa.me/' . preg_replace('/[^0-9]/', '', $url);
-        $html .= sprintf(
-            '<a href="%s" class="bbm-social-link bbm-social-link--%s" target="_blank" rel="noopener noreferrer" aria-label="%s">' .
-            '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="%s" stroke="%s" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="%s"/></svg>' .
-            '</a>',
-            esc_url($url), esc_attr($platform), esc_attr($label),
-            in_array($platform,['facebook','instagram','youtube','whatsapp','telegram','tiktok'],'strict') ? 'currentColor' : 'none',
-            in_array($platform,['twitter','linkedin'],'strict') ? 'currentColor' : 'none',
-            esc_attr($path)
+        if ( $platform === 'whatsapp' ) {
+            $url = 'https://wa.me/' . preg_replace( '/[^0-9]/', '', $url );
+        }
+        $fill   = in_array( $platform, $fill_platforms, true ) ? 'currentColor' : 'none';
+        $stroke = in_array( $platform, $stroke_platforms, true ) ? 'currentColor' : 'none';
+        $icon   = sprintf(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="%s" stroke="%s" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="%s"/></svg>',
+            esc_attr( $fill ), esc_attr( $stroke ), esc_attr( $path )
         );
+        $result[] = [
+            'url'      => esc_url( $url ),
+            'label'    => $label,
+            'platform' => $platform,
+            'icon'     => $icon,
+        ];
     }
-    if ( ! $found ) $html .= '<span class="bbm-social-empty">' . __('Sosyal medya bağlantıları henüz ayarlanmamış.','bitebimuv-dernek') . '</span>';
-    $html .= '</div>';
-    return $html;
+
+    return $result;
 }
 
 /* ── Share Buttons ── */
 function bbm_share_buttons(): void {
-    $url   = urlencode( get_permalink() );
-    $title = urlencode( get_the_title() );
-    $text  = urlencode( get_the_title() . ' — ' . get_bloginfo('name') );
+    $encoded_url  = urlencode( get_permalink() );
+    $encoded_text = urlencode( get_the_title() . ' — ' . get_bloginfo('name') );
+    $fb_href      = esc_url( 'https://www.facebook.com/sharer/sharer.php?u=' . $encoded_url );
+    $tw_href      = esc_url( 'https://twitter.com/intent/tweet?text=' . $encoded_text . '&url=' . $encoded_url );
+    $wa_href      = esc_url( 'https://wa.me/?text=' . $encoded_text . '%20' . $encoded_url );
     ?>
     <div class="bbm-share-buttons" role="group" aria-label="<?php _e('Paylaş','bitebimuv-dernek'); ?>">
         <span class="bbm-share-label"><?php _e('Paylaş:','bitebimuv-dernek'); ?></span>
-        <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo $url; ?>" target="_blank" rel="noopener" class="bbm-share-btn bbm-share-btn--facebook" aria-label="Facebook'ta paylaş">
+        <a href="<?php echo $fb_href; ?>" target="_blank" rel="noopener" class="bbm-share-btn bbm-share-btn--facebook" aria-label="Facebook'ta paylaş">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
             Facebook
         </a>
-        <a href="https://twitter.com/intent/tweet?text=<?php echo $text; ?>&url=<?php echo $url; ?>" target="_blank" rel="noopener" class="bbm-share-btn bbm-share-btn--twitter" aria-label="Twitter'da paylaş">
+        <a href="<?php echo $tw_href; ?>" target="_blank" rel="noopener" class="bbm-share-btn bbm-share-btn--twitter" aria-label="Twitter'da paylaş">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
             Twitter
         </a>
-        <a href="https://wa.me/?text=<?php echo $text . '%20' . $url; ?>" target="_blank" rel="noopener" class="bbm-share-btn bbm-share-btn--whatsapp" aria-label="WhatsApp'ta paylaş">
+        <a href="<?php echo $wa_href; ?>" target="_blank" rel="noopener" class="bbm-share-btn bbm-share-btn--whatsapp" aria-label="WhatsApp'ta paylaş">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>
             WhatsApp
         </a>

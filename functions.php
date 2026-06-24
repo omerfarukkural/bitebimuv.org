@@ -205,7 +205,7 @@ function bbm_handle_contact(): void {
     if ( ! $name || ! is_email( $email ) || ! $message ) {
         wp_send_json_error( ['message' => __( 'Zorunlu alanları doğru doldurun.', 'bitebimuv-dernek' )] );
     }
-    $to      = get_theme_mod( 'bbm_contact_info_email', get_option( 'admin_email' ) );
+    $to      = get_theme_mod( 'bbm_contact_email', get_option( 'admin_email' ) );
     $headers = [ 'Content-Type: text/html; charset=UTF-8', "Reply-To: {$name} <{$email}>" ];
     $sent    = wp_mail( $to, '[BiteBiMuv] ' . ( $subject ?: 'İletişim Formu' ),
         bbm_build_email( [ 'title' => 'Yeni İletişim Mesajı', 'fields' => [
@@ -438,6 +438,44 @@ function bbm_build_email( array $args ): string {
         . "<div style='padding:40px;'>"
         . ( $intro ? "<p style='font-size:17px;color:#333;margin:0 0 8px;font-weight:600;'>{$intro}</p>" : '' )
         . ( $msg   ? "<p style='font-size:15px;color:#555;line-height:1.7;margin:0 0 16px;'>{$msg}</p>"  : '' )
+        . "{$table}</div>"
+        . "<div style='background:#f8fafc;padding:28px 40px;text-align:center;border-top:1px solid #e8ecf0;'>"
+        . "<p style='margin:0;font-size:13px;color:#94a3b8;'><a href='{$url}' style='color:{$primary};text-decoration:none;font-weight:700;'>{$site}</a> &middot; &copy; {$year}</p>"
+        . "</div></div></body></html>";
+}
+
+/* ── HTML Email Builder v4 (enhanced layout) ── */
+function bbm_build_email_v4( array $args ): string {
+    $primary  = get_theme_mod( 'bbm_primary_color', '#E8435A' );
+    $sec      = get_theme_mod( 'bbm_secondary_color', '#2D3561' );
+    $icon     = $args['icon']     ?? '';
+    $title    = $args['title']    ?? '';
+    $subtitle = $args['subtitle'] ?? '';
+    $greeting = $args['greeting'] ?? '';
+    $body     = $args['body']     ?? '';
+    $fields   = $args['fields']   ?? [];
+    $rows     = '';
+    foreach ( $fields as $label => $value ) {
+        $rows .= "<tr><td style='padding:10px 16px;font-weight:700;color:{$sec};width:38%;border-bottom:1px solid #eee;font-size:13px;'>"
+               . esc_html( $label ) . "</td>"
+               . "<td style='padding:10px 16px;color:#444;border-bottom:1px solid #eee;font-size:14px;'>{$value}</td></tr>";
+    }
+    $table = $rows ? "<table style='width:100%;border-collapse:collapse;margin:24px 0;background:#fafafa;border-radius:12px;overflow:hidden;border:1px solid #eee;'>{$rows}</table>" : '';
+    $site  = get_bloginfo('name');
+    $url   = home_url();
+    $logo  = get_site_icon_url(64);
+    $year  = date('Y');
+    return "<!DOCTYPE html><html lang='tr'><head><meta charset='UTF-8'></head><body style='margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:#f0f4f8;'>"
+        . "<div style='max-width:600px;margin:40px auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.1);'>"
+        . "<div style='background:linear-gradient(135deg,{$primary} 0%,{$sec} 100%);padding:48px 40px;text-align:center;'>"
+        . ( $logo ? "<img src='{$logo}' width='64' height='64' style='border-radius:50%;margin-bottom:20px;border:3px solid rgba(255,255,255,.3);'>" : '' )
+        . ( $icon ? "<div style='font-size:48px;margin-bottom:12px;'>{$icon}</div>" : '' )
+        . "<h1 style='color:#fff;margin:0 0 8px;font-size:26px;font-weight:800;letter-spacing:-.5px;'>{$title}</h1>"
+        . ( $subtitle ? "<p style='color:rgba(255,255,255,.85);margin:0;font-size:15px;'>{$subtitle}</p>" : '' )
+        . "</div>"
+        . "<div style='padding:40px;'>"
+        . ( $greeting ? "<p style='font-size:17px;color:#333;margin:0 0 16px;font-weight:600;'>{$greeting}</p>" : '' )
+        . $body
         . "{$table}</div>"
         . "<div style='background:#f8fafc;padding:28px 40px;text-align:center;border-top:1px solid #e8ecf0;'>"
         . "<p style='margin:0;font-size:13px;color:#94a3b8;'><a href='{$url}' style='color:{$primary};text-decoration:none;font-weight:700;'>{$site}</a> &middot; &copy; {$year}</p>"

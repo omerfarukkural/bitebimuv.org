@@ -80,6 +80,25 @@
     transform: translateY(-1px);
 }
 
+.bbm-topbar__close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: rgba(255,255,255,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: color 0.2s, background 0.2s;
+}
+
+.bbm-topbar__close:hover {
+    color: white;
+    background: rgba(255,255,255,0.15);
+}
+
 /* =========================================
    DARK MODE TOGGLE
    ========================================= */
@@ -94,12 +113,12 @@
 }
 
 /* Light mode: sun visible, moon hidden */
-.bbm-dm-sun { opacity: 1; transform: scale(1) rotate(0deg); }
-.bbm-dm-moon { position: absolute; opacity: 0; transform: scale(0.5) rotate(-90deg); }
+.bbm-darkmode-icon-sun  { display: block; }
+.bbm-darkmode-icon-moon { display: none; }
 
-/* Dark mode: moon visible, sun hidden */
-.bbm-dark .bbm-dm-sun { opacity: 0; transform: scale(0.5) rotate(90deg); }
-.bbm-dark .bbm-dm-moon { opacity: 1; transform: scale(1) rotate(0deg); position: static; }
+/* Dark mode: moon visible, sun hidden (handled by dark-mode.css too) */
+.bbm-dark .bbm-darkmode-icon-sun  { display: none; }
+.bbm-dark .bbm-darkmode-icon-moon { display: block; }
 
 /* =========================================
    ENHANCED SEARCH PANEL
@@ -112,9 +131,19 @@
     align-items: flex-start;
     justify-content: center;
     padding-top: 8vh;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: visibility 0s linear 0.2s, opacity 0.2s ease;
 }
 
 .bbm-search-panel[hidden] { display: none; }
+.bbm-search-panel.is-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0s;
+}
 
 .bbm-search-panel__backdrop {
     position: absolute;
