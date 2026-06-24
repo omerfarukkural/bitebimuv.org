@@ -3,26 +3,86 @@ name: Deploy WordPress Theme via FTP
 on:
   push:
     branches: [main]
-    paths:
-      - 'theme/**'
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Zorla deploy et'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   deploy:
-    name: FTP Deploy
+    name: FTP Deploy — Turhost
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://bitebimuv.org
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Deploy theme to Turhost via FTP
+      - name: PHP Syntax Check
+        run: |
+          echo "PHP dosyaları kontrol ediliyor..."
+          find . -name "*.php" \
+            -not -path './.git/*' \
+            -not -path './infra/*' \
+            -not -path './theme/*' | while read file; do
+            php -l "$file" || exit 1
+          done
+          echo "✅ Tüm PHP dosyaları geçerli"
+
+      - name: Tema yapısını doğrula
+        run: |
+          for f in style.css functions.php index.php header.php footer.php; do
+            [ -f "$f" ] || { echo "❌ Eksik: $f"; exit 1; }
+          done
+          grep -q 'Theme Name:' style.css || { echo "❌ style.css'de Theme Name yok"; exit 1; }
+          echo "✅ Tema yapısı doğrulandı ($(grep 'Version:' style.css | head -1))"
+
+      - name: Deploy tema — FTP (Turhost)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.TURHOST_FTP_HOST }}
           username: ${{ secrets.TURHOST_FTP_USER }}
           password: ${{ secrets.TURHOST_FTP_PASSWORD }}
-          local-dir: ./theme/
+          local-dir: ./
           server-dir: public_html/wp-content/themes/bitebimuv/
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
+            .github/**
+            infra/**
+            theme/**
+            KURULUM_REHBERI.md
+            README.md
+            *.md
+            *.log
+            .env*
+            package*.json
+
+      - name: Site sağlık kontrolü
+        run: |
+          echo "Bekleniyor (5s)..."
+          sleep 5
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 https://bitebimuv.org || echo "000")
+          echo "HTTP durum: $STATUS"
+          if [[ "$STATUS" =~ ^(200|301|302)$ ]]; then
+            echo "✅ Site yanıt veriyor (HTTP $STATUS)"
+          else
+            echo "⚠️ Site yanıt vermiyor (HTTP $STATUS) — WordPress yüklü değil olabilir"
+          fi
+
+      - name: Özet
+        if: always()
+        run: |
+          echo "## 🚀 FTP Deploy Özeti" >> $GITHUB_STEP_SUMMARY
+          echo "| Alan | Değer |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Site** | https://bitebimuv.org |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Yapan** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Zaman** | $(date -u '+%Y-%m-%d %H:%M UTC') |" >> $GITHUB_STEP_SUMMARY
