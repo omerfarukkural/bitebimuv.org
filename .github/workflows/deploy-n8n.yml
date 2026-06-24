@@ -1,42 +1,28 @@
-name: Deploy n8n
+name: Deploy n8n to GCP VM
 
 on:
   push:
     branches: [main]
     paths:
       - 'infra/n8n/**'
-      - '.github/workflows/deploy-n8n.yml'
+      - 'infra/nginx/n8n.conf'
   workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy n8n to Google Cloud VM
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.GCP_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Copy docker-compose to server
-        run: |
-          scp -i ~/.ssh/deploy_key \
-            infra/n8n/docker-compose.yml \
-            ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }}:~/apps/n8n/docker-compose.yml
-
-      - name: Deploy on server
-        run: |
-          ssh -i ~/.ssh/deploy_key \
-            ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} \
-            'bash ~/apps/n8n/deploy-n8n.sh'
-
-      - name: Health check
-        run: |
-          sleep 15
-          curl -f https://n8n.bitebimuv.org/healthz || echo "Health check failed - check server logs"
+      - name: Deploy to GCP VM via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 34.141.16.229
+          username: ${{ secrets.GCP_SSH_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/n8n
+            git fetch origin main
+            git reset --hard origin/main
+            cd infra/n8n
+            docker compose pull n8n
+            docker compose up -d n8n
+            echo "n8n deploy tamamlandı: $(date)"

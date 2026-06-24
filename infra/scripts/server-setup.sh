@@ -1,45 +1,61 @@
 #!/bin/bash
-# ==============================================================
-# Google Cloud VM İlk Kurulum Scripti
-# Sunucu: 34.141.16.229
-# Çalıştırma: bash server-setup.sh
-# ==============================================================
 set -e
 
-echo "=== Sistem güncelleniyor ==="
-sudo apt-get update && sudo apt-get upgrade -y
+echo "=== n8n GCP VM Kurulum Scripti ==="
+echo "VM: Ubuntu 22.04, n8n.bitebimuv.org"
 
-echo "=== Docker kuruluyor ==="
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER
+# 1. Sistem güncellemesi
+apt-get update && apt-get upgrade -y
 
-echo "=== Docker Compose kuruluyor ==="
-sudo apt-get install -y docker-compose-plugin
+# 2. Docker kurulumu
+apt-get install -y ca-certificates curl gnupg
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+chmod a+r /etc/apt/keyrings/docker.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-echo "=== Nginx kuruluyor ==="
-sudo apt-get install -y nginx certbot python3-certbot-nginx
+# Docker grubuna kullanıcı ekle
+usermod -aG docker $SUDO_USER || true
 
-echo "=== Git kuruluyor ==="
-sudo apt-get install -y git
+# 3. Nginx + Certbot kurulumu
+apt-get install -y nginx certbot python3-certbot-nginx
 
-echo "=== Dizinler oluşturuluyor ==="
-mkdir -p ~/apps/n8n
-mkdir -p ~/apps/mutluet
-mkdir -p /var/www/certbot
+# 4. Nginx konfigürasyonu kopyala
+cp /opt/n8n/infra/nginx/n8n.conf /etc/nginx/sites-available/n8n.bitebimuv.org
+ln -sf /etc/nginx/sites-available/n8n.bitebimuv.org /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
 
-echo "=== Nginx konfigürasyonları kopyalanıyor ==="
-# Bu adımı repo klonladıktan sonra yapın:
-# sudo cp ~/apps/bitebimuv.org/infra/nginx/n8n.conf /etc/nginx/sites-available/n8n.bitebimuv.org
-# sudo cp ~/apps/bitebimuv.org/infra/nginx/app.conf /etc/nginx/sites-available/app.bitebimuv.org
-# sudo ln -sf /etc/nginx/sites-available/n8n.bitebimuv.org /etc/nginx/sites-enabled/
-# sudo ln -sf /etc/nginx/sites-available/app.bitebimuv.org /etc/nginx/sites-enabled/
-# sudo nginx -t && sudo systemctl reload nginx
+# 5. Önce HTTP ile nginx başlat (certbot için)
+nginx -t && systemctl restart nginx
 
-echo "=== UFW Güvenlik Duvarı ==="
-sudo ufw allow OpenSSH
-sudo ufw allow 'Nginx Full'
-sudo ufw --force enable
+# 6. SSL sertifikası al
+certbot --nginx -d n8n.bitebimuv.org --non-interactive --agree-tos --email admin@bitebimuv.org
+
+# 7. Certbot otomatik yenileme
+systemctl enable certbot.timer
+
+# 8. n8n .env dosyasını oluştur
+if [ ! -f /opt/n8n/infra/n8n/.env ]; then
+    POSTGRES_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=' | head -c 32)
+    N8N_ENCRYPTION_KEY=$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)
+    cat > /opt/n8n/infra/n8n/.env << EOF
+POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+N8N_ENCRYPTION_KEY=$N8N_ENCRYPTION_KEY
+EOF
+    echo "=== .env dosyası oluşturuldu ==="
+    echo "POSTGRES_PASSWORD: $POSTGRES_PASSWORD"
+    echo "N8N_ENCRYPTION_KEY: $N8N_ENCRYPTION_KEY"
+    echo "Bu değerleri güvenli bir yerde saklayın!"
+fi
+
+# 9. n8n Docker Compose başlat
+cd /opt/n8n/infra/n8n
+docker compose up -d
+
+# 10. Nginx son kez yeniden başlat
+systemctl restart nginx
 
 echo "=== Kurulum tamamlandı ==="
-echo "Sonraki adım: setup-ssh-keys.sh scriptini çalıştırın"
-echo "Sonra: certbot --nginx -d n8n.bitebimuv.org -d app.bitebimuv.org"
+echo "n8n: https://n8n.bitebimuv.org"
