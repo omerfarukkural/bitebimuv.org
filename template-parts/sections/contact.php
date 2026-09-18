@@ -5,17 +5,17 @@
  * @package bitebimuv-dernek
  */
 
-$address  = get_theme_mod( 'bbm_address', 'İstanbul, Türkiye' );
-$phone    = get_theme_mod( 'bbm_phone',   '+90 (212) 000 00 00' );
-$email    = get_theme_mod( 'bbm_email',   'info@bitebimuv.org' );
-$maps_url = get_theme_mod( 'bbm_maps_url', '' );
+$address  = get_theme_mod( 'bbm_contact_address', 'İstanbul, Türkiye' );
+$phone    = get_theme_mod( 'bbm_contact_phone',   '+90 (212) 000 00 00' );
+$email    = get_theme_mod( 'bbm_contact_email',   'info@bitebimuv.org' );
+$maps_url = get_theme_mod( 'bbm_contact_maps_url', '' );
 ?>
 <section class="bbm-contact" id="iletisim" aria-label="<?php esc_attr_e( 'İletişim', 'bitebimuv-dernek' ); ?>">
     <div class="container">
         <div class="bbm-section-header">
             <span class="bbm-section-badge"><?php _e( '📧 Bize Yazın', 'bitebimuv-dernek' ); ?></span>
             <h2 class="bbm-section-title"><?php _e( 'İletişime Geçin', 'bitebimuv-dernek' ); ?></h2>
-            <p class="bbm-section-subtitle"><?php _e( 'Sorularınız için bize ulaşın. En kısa sürede geri dönüyorız.', 'bitebimuv-dernek' ); ?></p>
+            <p class="bbm-section-subtitle"><?php _e( 'Sorularınız için bize ulaşın. En kısa sürede geri dönüyoruz.', 'bitebimuv-dernek' ); ?></p>
         </div>
 
         <div class="bbm-contact__grid">

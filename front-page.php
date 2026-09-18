@@ -10,6 +10,9 @@ get_header();
 // Hero bölümü
 get_template_part( 'template-parts/sections/hero' );
 
+// Bağış / IBAN
+get_template_part( 'template-parts/sections/donate' );
+
 // İstatistikler
 get_template_part( 'template-parts/sections/stats' );
 

@@ -3,8 +3,10 @@ name: Deploy WordPress Theme via FTP
 on:
   push:
     branches: [main]
-    paths:
-      - 'theme/**'
+    paths-ignore:
+      - 'infra/**'
+      - '.github/**'
+      - '*.md'
 
 jobs:
   deploy:
@@ -20,9 +22,14 @@ jobs:
           server: ${{ secrets.TURHOST_FTP_HOST }}
           username: ${{ secrets.TURHOST_FTP_USER }}
           password: ${{ secrets.TURHOST_FTP_PASSWORD }}
-          local-dir: ./theme/
+          local-dir: ./
           server-dir: public_html/wp-content/themes/bitebimuv/
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
+            infra/**
+            .github/**
+            README.md
+            KURULUM_REHBERI.md
+            theme/**

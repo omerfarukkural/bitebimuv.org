@@ -205,7 +205,7 @@ function bbm_handle_contact(): void {
     if ( ! $name || ! is_email( $email ) || ! $message ) {
         wp_send_json_error( ['message' => __( 'Zorunlu alanları doğru doldurun.', 'bitebimuv-dernek' )] );
     }
-    $to      = get_theme_mod( 'bbm_contact_info_email', get_option( 'admin_email' ) );
+    $to      = get_theme_mod( 'bbm_contact_email', get_option( 'admin_email' ) );
     $headers = [ 'Content-Type: text/html; charset=UTF-8', "Reply-To: {$name} <{$email}>" ];
     $sent    = wp_mail( $to, '[BiteBiMuv] ' . ( $subject ?: 'İletişim Formu' ),
         bbm_build_email( [ 'title' => 'Yeni İletişim Mesajı', 'fields' => [

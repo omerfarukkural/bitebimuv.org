@@ -10,7 +10,7 @@
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="<?php echo esc_attr( get_theme_mod( 'bbm_primary_color', '#6366f1' ) ); ?>">
+    <meta name="theme-color" content="<?php echo esc_attr( get_theme_mod( 'bbm_primary_color', '#E8435A' ) ); ?>">
     <link rel="profile" href="https://gmpg.org/xfn/11">
     <?php wp_head(); ?>
 </head>

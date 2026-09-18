@@ -15,12 +15,12 @@ function bbm_schema_organization(): array {
             'url'   => get_site_icon_url(512) ?: '',
         ],
         'description'    => get_bloginfo('description'),
-        'email'          => get_theme_mod('bbm_contact_info_email', ''),
-        'telephone'      => get_theme_mod('bbm_contact_info_phone', ''),
+        'email'          => get_theme_mod('bbm_contact_email', ''),
+        'telephone'      => get_theme_mod('bbm_contact_phone', ''),
         'address'        => [
             '@type'           => 'PostalAddress',
             'addressLocality' => 'Türkiye',
-            'streetAddress'   => get_theme_mod('bbm_contact_info_address', ''),
+            'streetAddress'   => get_theme_mod('bbm_contact_address', ''),
         ],
         'sameAs' => array_filter( [
             get_theme_mod('bbm_social_facebook',  ''),

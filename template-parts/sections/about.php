@@ -6,7 +6,7 @@
  */
 
 $about_title = get_theme_mod( 'bbm_about_title', 'Hakkımızda' );
-$about_text  = get_theme_mod( 'bbm_about_text', 'BiteBiMuv Derneği olarak, toplumsal dayanışmayı güçlendirmek, kültürel etkinlikler düzenlemek ve üyelerimizin sosyal gelişimini desteklemek amacıyla 2016 yılından bu yana çalışmaktayız.' );
+$about_text  = get_theme_mod( 'bbm_about_text', 'Bir Tebessüm Bin Mutluluk Derneği olarak, toplumsal dayanışmayı güçlendirmek, ihtiyaç sahiplerine ulaşmak ve gönüllülerimizle birlikte kalıcı projeler üretmek amacıyla 2016 yılından bu yana çalışmaktayız.' );
 
 $features = [
     [ '🤝', 'Gönüllülük',         'Topluma gönüllü katkı sağlamak temel değerimizdir.' ],
@@ -35,8 +35,8 @@ $features = [
 
                     <!-- Dekoratif unsurlar -->
                     <div class="bbm-about__badge" aria-hidden="true">
-                        <span class="bbm-about__badge-year"><?php echo date( 'Y' ) - 2016; ?>+</span>
-                        <span class="bbm-about__badge-text"><?php _e( 'Yıldırı Burada', 'bitebimuv-dernek' ); ?></span>
+                        <span class="bbm-about__badge-year"><?php echo esc_html( date( 'Y' ) - intval( get_theme_mod( 'bbm_founded_year', '2016' ) ) ); ?>+</span>
+                        <span class="bbm-about__badge-text"><?php _e( 'Yıldır Buradayız', 'bitebimuv-dernek' ); ?></span>
                     </div>
                     <div class="bbm-about__dots" aria-hidden="true"></div>
                 </div>

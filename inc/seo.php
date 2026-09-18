@@ -16,7 +16,7 @@ function bbm_seo_meta_tags() {
     $site_name   = get_bloginfo( 'name' );
     $site_desc   = get_bloginfo( 'description' );
     $site_url    = get_site_url();
-    $theme_color = get_theme_mod( 'bbm_primary_color', '#6366f1' );
+    $theme_color = get_theme_mod( 'bbm_primary_color', '#E8435A' );
     $org_logo    = get_theme_mod( 'bbm_logo_url', '' );
 
     $title     = $site_name;
