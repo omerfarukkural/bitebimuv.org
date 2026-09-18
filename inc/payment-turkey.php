@@ -189,17 +189,18 @@ class BBM_Payment_Turkey {
 BBM_Payment_Turkey::get_instance();
 
 function bbm_render_qr_payment_info(float $amount = 0.00, string $type = 'standard'): string {
-    $iban   = get_theme_mod('bbm_bank_iban',   '');
-    $bank   = get_theme_mod('bbm_bank_name',   'Ziraat Bankası');
+    $iban   = get_theme_mod('bbm_bank_iban',   'TR47 0001 0011 5898 3279 6950 01');
+    $bank   = get_theme_mod('bbm_bank_name',   '');
     $holder = get_theme_mod('bbm_bank_holder', get_bloginfo('name'));
     if (!$iban) return '';
     $price = $amount > 0 ? number_format($amount, 2, ',', '.') . ' ₺' : '';
     $desc  = esc_html(get_bloginfo('name')) . ' ' . esc_html(ucfirst($type)) . ' Üyelik';
+    $bank_row = $bank ? "<div class='bbm-qr-payment__row'><span>Banka:</span><strong>" . esc_html($bank) . "</strong></div>" : '';
     return sprintf(
         '<div class="bbm-qr-payment">
             <h4 class="bbm-qr-payment__title">%s</h4>
             <div class="bbm-qr-payment__fields">
-                <div class="bbm-qr-payment__row"><span>Banka:</span><strong>%s</strong></div>
+                %s
                 <div class="bbm-qr-payment__row"><span>Hesap Sahibi:</span><strong>%s</strong></div>
                 <div class="bbm-qr-payment__row"><span>IBAN:</span><strong class="bbm-iban">%s</strong></div>
                 %s
@@ -208,11 +209,11 @@ function bbm_render_qr_payment_info(float $amount = 0.00, string $type = 'standa
             <button type="button" class="bbm-btn bbm-btn--outline bbm-copy-iban" data-iban="%s">IBAN\'ı Kopyala</button>
         </div>',
         esc_html__('Havale/EFT ile Ödeme', 'bitebimuv-dernek'),
-        esc_html($bank),
+        $bank_row,
         esc_html($holder),
         esc_html($iban),
         $price ? "<div class='bbm-qr-payment__row'><span>Tutar:</span><strong>{$price}</strong></div>" : '',
         esc_html($desc),
-        esc_attr($iban)
+        esc_attr(strtoupper(preg_replace('/\s+/', '', $iban)))
     );
 }

@@ -301,6 +301,30 @@
     });
   }
 
+  /* ===== IBAN COPY ===== */
+  function initIbanCopy() {
+    document.querySelectorAll('.bbm-copy-iban').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var iban = btn.dataset.iban || '';
+        if (!iban) return;
+        var done = function() { showToast('✅ IBAN kopyalandı!', 'success'); };
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(iban).then(done).catch(function() {
+            showToast('IBAN kopyalanamadı, lütfen elle seçin.', 'error');
+          });
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = iban;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          done();
+        }
+      });
+    });
+  }
+
   /* ===== SMOOTH SCROLL ===== */
   function initSmoothScroll() {
     var header = document.querySelector('.bbm-header');
@@ -434,6 +458,7 @@
     initNewsletter();
     initGallery();
     initShareButtons();
+    initIbanCopy();
     initSmoothScroll();
     initPlanSelect();
     initTimeline();

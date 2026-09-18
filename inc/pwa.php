@@ -12,7 +12,7 @@ add_filter( 'query_vars', 'bbm_pwa_query_vars' );
 add_action( 'template_redirect', 'bbm_pwa_template_redirect' );
 
 function bbm_pwa_head_tags() {
-    $theme_color = get_theme_mod( 'bbm_primary_color', '#6366f1' );
+    $theme_color = get_theme_mod( 'bbm_primary_color', '#E8435A' );
     $site_name   = get_bloginfo( 'name' );
     $icons_uri   = get_template_directory_uri() . '/assets/images/icons';
     ?>
@@ -70,7 +70,7 @@ function bbm_pwa_template_redirect() {
 function bbm_serve_manifest() {
     $site_name   = get_bloginfo( 'name' );
     $site_desc   = get_bloginfo( 'description' );
-    $theme_color = get_theme_mod( 'bbm_primary_color', '#6366f1' );
+    $theme_color = get_theme_mod( 'bbm_primary_color', '#E8435A' );
     $icons_uri   = get_template_directory_uri() . '/assets/images/icons';
 
     $manifest = [

@@ -26,7 +26,7 @@ get_header(); ?>
                         $address = get_theme_mod( 'bbm_contact_address', '' );
                         $phone   = get_theme_mod( 'bbm_contact_phone', '' );
                         $email   = get_theme_mod( 'bbm_contact_email', '' );
-                        $hours   = get_theme_mod( 'bbm_contact_hours', 'Pazartesi – Cuma: 09:00 – 18:00' );
+                        $hours   = get_theme_mod( 'bbm_contact_working_hours', 'Pazartesi – Cuma: 09:00 – 18:00' );
                         $map_lat = get_theme_mod( 'bbm_map_lat', '41.0082376' );
                         $map_lng = get_theme_mod( 'bbm_map_lng', '28.9783589' );
 
