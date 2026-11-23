@@ -1,0 +1,21 @@
+.next/
+node_modules/
+.env.local
+.env*.local
+out/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+.vercel
+# wip: hassas/derleme dosyalari
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+GoogleService-Info.plist
+google-services.json
+build/
+.dart_tool/
